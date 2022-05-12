@@ -2,13 +2,13 @@ import threading
 from pco_capture import *
 import cv2 as cv
 import numpy as np
-from bv_native_helpers import NativeAutoscale
+from bv_algorithms import AutoscaleImage
 
 diff_set = False
 diff_img = np.zeros(shape=(2048, 2048), dtype=np.uint8)
 frame_counter = 0
 kernel = np.ones((5, 5), np.uint8)
-bv_native_autoscale = NativeAutoscale()
+bv_native_autoscale = AutoscaleImage()
 
 
 def update_original_frame(image: np.ndarray):
@@ -19,7 +19,7 @@ def update_original_frame(image: np.ndarray):
     image_8bit = cv.normalize(image, None, 0, 255, cv.NORM_MINMAX, dtype=cv.CV_8U)
     image_8bit_f = image_8bit.astype('float64')
     # image_8bit_f = np.where(image_8bit_f > 250, 0, image_8bit_f)
-    cv.imshow("Live Bild", cv.resize(image_8bit), (1024, 1024))
+    cv.imshow("Live Bild", cv.resize(image_8bit, (1024, 1024)))
 
     if not diff_set:
         diff_img = image_8bit_f.copy()
@@ -36,9 +36,11 @@ def update_original_frame(image: np.ndarray):
     else:
         frame_counter += 1
 
+    cv.waitKey(1)
+
 
 if __name__ == '__main__':
-    capture = VideoCapture()
+    capture = VideoCapture(frame_available_callback=update_original_frame)
     capture_thread = threading.Thread(target=capture.run)
     capture_thread.start()
     capture_thread.join()
