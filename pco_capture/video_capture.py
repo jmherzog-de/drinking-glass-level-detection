@@ -1,5 +1,9 @@
 import pco
-import cv2 as cv
+import os
+import cv2
+from datetime import datetime
+from PySide6.QtCore import QThread, Signal
+import numpy as np
 
 
 class VideoCapture(object):
@@ -22,10 +26,73 @@ class VideoCapture(object):
         while True:
             self.cam.wait_for_first_image()
             image, _ = self.cam.image()
-            image = cv.rotate(image, cv.ROTATE_90_CLOCKWISE)
+            image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
 
             if self.__frame_counter == 2:
                 self.__frame_counter = 0
                 self.__frame_available_callback(image)
             else:
                 self.__frame_counter += 1
+
+
+class QtVideoCapture(QThread):
+
+    update_frame = Signal(np.ndarray)
+
+    def __init__(self):
+        QThread.__init__(self, parent=None)
+        self.capture_enabled = False
+        self.save_image = False
+        self.__captured_images = []
+        self.__counter = 0
+
+    def run(self):
+
+        with pco.Camera() as cam:
+
+            # --------------------------------------------- #
+            # Setup Camera Parameters                       #
+            # --------------------------------------------- #
+            cam.set_exposure_time(0.01)  # 0.014997
+
+            # --------------------------------------------- #
+            # Create folder on local system to save all     #
+            # captured images from camera.                  #
+            # --------------------------------------------- #
+            if self.save_image:
+                folder_name = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+                os.mkdir(folder_name)
+
+            # --------------------------------------------- #
+            # Start recording
+            # --------------------------------------------- #
+            cam.record(number_of_images=40, mode='fifo')
+
+            while self.capture_enabled:
+
+                cam.wait_for_first_image()
+                image, _ = cam.image()
+                image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+
+                if self.__counter == 2:
+                    if self.save_image:
+                        self.__captured_images.append(image)
+                    self.update_frame.emit(image)
+                    self.__counter = 0
+                else:
+                    self.__counter += 1
+
+            # END OF CAPTURE PROCESS
+            if self.save_image:
+                print("Save images on filesystem...")
+                n = len(self.__captured_images)
+                counter = 0
+                while len(self.__captured_images) > 0:
+                    image = self.__captured_images.pop()
+                    cv2.imwrite(f"{folder_name}/capture_{counter}.png", image)
+                    counter += 1
+                    print(f"({counter+1}/{n})")
+                print("all images saved.")
+
+            cam.close()
+

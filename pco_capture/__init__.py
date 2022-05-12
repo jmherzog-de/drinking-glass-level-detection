@@ -1,1 +1,1 @@
-from .video_capture import VideoCapture
+from .video_capture import VideoCapture, QtVideoCapture
