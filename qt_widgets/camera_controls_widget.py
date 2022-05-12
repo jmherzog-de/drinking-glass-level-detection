@@ -13,7 +13,7 @@ class CameraControlsWidget(QWidget):
         self.__groupbox.setObjectName("groupbox")
         self.__groupbox.setTitle("Camera Control")
 
-        self.__central_widget_layout.addWidget(self.__groupbox)
+        self.__central_layout.addWidget(self.__groupbox)
 
         self.__groupbox_layout = QHBoxLayout(self.__groupbox)
         self.__groupbox_layout.setObjectName(u"groupbox_layout")
