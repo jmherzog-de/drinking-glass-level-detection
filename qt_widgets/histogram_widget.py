@@ -34,6 +34,7 @@ class HistogramWidget(QWidget):
         self.hist_y_axis.setTickCount(10)
         self.hist_y_axis.setMin(0.0)
         self.hist_y_axis.setTitleText(u"N Pixels")
+        self.hist_chart.addAxis(self.hist_y_axis, Qt.AlignLeft)
 
         # Add ChartView to Histogram Chart
         self.histogram = QChartView(self.hist_chart)
@@ -45,12 +46,14 @@ class HistogramWidget(QWidget):
         self.cum_hist_x_axis.setMin(0)
         self.cum_hist_x_axis.setMin(65535)
         self.cum_hist_x_axis.setTitleText(u"Pixel Value")
+        self.cum_hist_chart.addAxis(self.cum_hist_x_axis, Qt.AlignBottom)
 
         # Setting Y-Axis for Cumulative Histogram Chart
         self.cum_hist_y_axis = QValueAxis()
         self.cum_hist_y_axis.setMin(0.0)
         self.cum_hist_y_axis.setMax(1.0)
         self.hist_y_axis.setTitleText(u"p")
+        self.cum_hist_chart.addAxis(self.cum_hist_y_axis, Qt.AlignLeft)
 
         # Add ChartView to Cumulative Histogram Chart
         self.cum_histogram = QChartView(self.cum_hist_chart)
@@ -63,7 +66,7 @@ class HistogramWidget(QWidget):
         series.setName(name)
 
         cum_series = QLineSeries()
-        series.setName(name)
+        cum_series.setName(name)
 
         n_pixel = (image.shape[0] * image.shape[1])
         m = 64 if str(image.dtype) == "uint16" else 1
@@ -86,6 +89,10 @@ class HistogramWidget(QWidget):
         series.attachAxis(self.hist_x_axis)
         series.attachAxis(self.hist_y_axis)
 
+        self.cum_hist_chart.addSeries(cum_series)
+        cum_series.attachAxis(self.cum_hist_x_axis)
+        cum_series.attachAxis(self.cum_hist_y_axis)
+
         y_max = self.hist_y_axis.max() if self.hist_y_axis.max() > hist.max() else hist.max()
         self.hist_y_axis.setMax(y_max)
 
@@ -93,5 +100,9 @@ class HistogramWidget(QWidget):
         for series in self.hist_chart.series():
             if series.name() == name:
                 self.hist_chart.removeSeries(series)
+                break
+        for series in self.cum_hist_chart.series():
+            if series.name() == name:
                 self.cum_hist_chart.removeSeries(series)
-                self.add_histogram(name, image)
+                break
+        self.add_histogram(name, image)
