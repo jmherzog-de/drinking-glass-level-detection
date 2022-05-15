@@ -26,7 +26,14 @@ def update_original_frame(image: np.ndarray):
         cv.imshow("Reference Image", cv.resize(diff_img.astype('uint8'), (1024, 1024)))
         diff_set = True
     elif frame_counter == 1:
-        img = np.where(abs(image_8bit_f - diff_img) > 80, image_8bit_f, 0)
+
+        # Create difference image
+        # Note: Either take pixels with a minimum difference over 80 and set them to 255 or keep
+        # the new pixel value
+        img = np.where(abs(image_8bit_f - diff_img) > 80, 255, 0)
+        # img = np.where(abs(image_8bit_f - diff_img) > 80, image_8bit_f, 0)
+
+        # Blur filter the image
         blur_img = cv.blur(img.astype('uint8'), (10, 10))
 
         # Sobel Y-Axis
