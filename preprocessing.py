@@ -14,7 +14,6 @@ bv_native_autoscale = AutoscaleImage()
 def update_original_frame(image: np.ndarray):
 
     global diff_set, diff_img, frame_counter, bv_native_autoscale
-
     image = bv_native_autoscale.autoscale(image)
     image_8bit = cv.normalize(image, None, 0, 255, cv.NORM_MINMAX, dtype=cv.CV_8U)
     image_8bit_f = image_8bit.astype('float64')
@@ -43,16 +42,22 @@ def update_original_frame(image: np.ndarray):
         thresh1 = cv.adaptiveThreshold(gray_y, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 11, 6)
 
         # Apply fixed threshold
-        thresh2 = cv.threshold(gray_y, thresh=50, maxval=255, type=cv.THRESH_BINARY)
+        _, thresh2 = cv.threshold(gray_y, thresh=50, maxval=255, type=cv.THRESH_BINARY)
 
         # Apply canny edge detection
         canny = cv.Canny(gray_y, threshold1=50, threshold2=150, edges=None, apertureSize=3, L2gradient=False)
 
+        # Find Contours in image
+        contours, hierarchy = cv.findContours(thresh1, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+        contours_image = np.zeros(shape=(2048, 2048), dtype='uint8')
+        cv.drawContours(contours_image, contours, -1, (255, 255, 255), 3)
+
         cv.imshow("Difference Image", cv.resize(img.astype('uint8'), (1024, 1024)))
         cv.imshow("Sobel Y", cv.resize(gray_y, (1024, 1024)))
         cv.imshow("Adaptive Threshold", cv.resize(thresh1, (1024, 1024)))
-        cv.imshow("Threshold", cv.resize(thresh2, (1024, 1024)))
+        cv.imshow("Threshold", cv.resize(blur_img, (1024, 1024)))
         cv.imshow("Canny", cv.resize(canny, (1024, 1024)))
+        cv.imshow("Contours", cv.resize(contours_image, (1024, 1024)))
 
         frame_counter = 0
     else:
