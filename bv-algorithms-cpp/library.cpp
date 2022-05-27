@@ -1,7 +1,7 @@
 #include "library.h"
 
-//#define WIN32
-#define OSX
+#define WIN32
+//#define OSX
 
 Autoscale::Autoscale() {}
 

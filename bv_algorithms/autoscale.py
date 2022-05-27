@@ -1,10 +1,16 @@
 import ctypes
+import platform
+
 import numpy as np
 import os
 
+if platform.system() == 'Windows':
+    lib = ctypes.CDLL(os.path.dirname(os.path.realpath(__file__)) + "\\bv_algorithms_cpp.dll")
+elif platform.system() == 'Darwin':
+    lib = ctypes.CDLL(os.path.dirname(os.path.realpath(__file__)) + "/libbv_algorithms_cpp.dylib")
+else:
+    raise Exception(f"No implementations for this System: {platform.system()}")
 
-# lib = ctypes.CDLL(os.path.dirname(os.path.realpath(__file__)) + "\\bv_helper.dll")
-lib = ctypes.CDLL(os.path.dirname(os.path.realpath(__file__)) + "/libbv_algorithms_cpp.dylib")
 c_int_array = np.ctypeslib.ndpointer(dtype=np.uint16, ndim=2, flags=['C_CONTIGUOUS', 'WRITEABLE'])
 BV_HelperHandle = ctypes.POINTER(ctypes.c_char)
 lib.createInstance.argtypes = []

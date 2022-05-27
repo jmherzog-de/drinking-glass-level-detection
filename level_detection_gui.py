@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
 
         self.mode = "VIDEO"   # 'CAMERA' | 'VIDEO'
         self.roi_p1 = (0, 0)
-        self.roi_p2 = (248, 2048)
+        self.roi_p2 = (2048, 2048)
 
         self.bv_scale = AutoscaleImage()
         self.bv_scale.create_lookup_table(t_min=1000, t_max=20000)
