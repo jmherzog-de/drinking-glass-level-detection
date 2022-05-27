@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QGroupBox, QFormLayout, QPushButton, QTextEdit
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QGroupBox, QFormLayout, QPushButton, QLineEdit
 
 
 class ROIWidget(QWidget):
@@ -18,22 +18,22 @@ class ROIWidget(QWidget):
         self.roi_form_layout = QFormLayout(self.groupbox_controls)
         self.roi_form_layout.setObjectName(u"roi_form_layout")
 
-        self.roi_text_edit_x1 = QTextEdit()
+        self.roi_text_edit_x1 = QLineEdit()
         self.roi_text_edit_x1.setObjectName(u"roi_text_edit_x1")
         self.roi_text_edit_x1.setText(u"0")
         self.roi_form_layout.addRow("x_1:", self.roi_text_edit_x1)
 
-        self.roi_text_edit_y1 = QTextEdit()
+        self.roi_text_edit_y1 = QLineEdit()
         self.roi_text_edit_y1.setObjectName(u"roi_text_edit_y1")
         self.roi_text_edit_y1.setText(u"0")
         self.roi_form_layout.addRow("y_1:", self.roi_text_edit_y1)
 
-        self.roi_text_edit_x2 = QTextEdit()
+        self.roi_text_edit_x2 = QLineEdit()
         self.roi_text_edit_x2.setObjectName(u"roi_text_edit_x2")
         self.roi_text_edit_x2.setText(u"2048")
         self.roi_form_layout.addRow("x_2:", self.roi_text_edit_x2)
 
-        self.roi_text_edit_y2 = QTextEdit()
+        self.roi_text_edit_y2 = QLineEdit()
         self.roi_text_edit_y2.setObjectName(u"roi_text_edit_y2")
         self.roi_text_edit_y2.setText(u"2048")
         self.roi_form_layout.addRow("y_2:", self.roi_text_edit_y2)

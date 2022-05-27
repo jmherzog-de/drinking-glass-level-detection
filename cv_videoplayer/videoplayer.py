@@ -1,5 +1,4 @@
 import time
-
 import cv2
 import numpy as np
 from PySide6.QtCore import QThread, Signal
@@ -18,8 +17,9 @@ class VideoPlayer(QThread):
 
     def run(self):
         self.__cap = cv2.VideoCapture(self.video_file_path)
-
-        while self.__cap.isOpened():
+        self.play = True
+        
+        while self.__cap.isOpened() and self.play:
             ret, frame = self.__cap.read()
             if not ret:
                 continue

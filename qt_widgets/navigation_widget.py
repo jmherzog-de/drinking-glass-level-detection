@@ -3,7 +3,8 @@ from PySide6.QtWidgets import QWidget, QGroupBox, QPushButton, QHBoxLayout, QChe
 
 class NavigationWidget(QWidget):
 
-    def __init__(self, open_video_file_callback, open_pco_stream_callback):
+    def __init__(self, open_video_file_callback, open_pco_stream_callback, play_video_callback, pause_video_callback,
+                 stop_video_callback, start_stream_callback, stop_stream_callback):
         super().__init__()
 
         self.__central_layout = QHBoxLayout(self)
@@ -41,11 +42,13 @@ class NavigationWidget(QWidget):
         self.__start_stream_button = QPushButton(self)
         self.__start_stream_button.setObjectName(u"start_stream_button")
         self.__start_stream_button.setText(u"Start PCO Stream")
+        self.__start_stream_button.clicked.connect(start_stream_callback)
         self.__groupbox_stream_control_layout.addWidget(self.__start_stream_button)
 
         self.__stop_stream_button = QPushButton(self)
         self.__stop_stream_button.setObjectName(u"stop_stream_button")
         self.__stop_stream_button.setText(u"Stop PCO Stream")
+        self.__stop_stream_button.clicked.connect(stop_stream_callback)
         self.__groupbox_stream_control_layout.addWidget(self.__stop_stream_button)
 
         self.__groupbox_video_file_control = QGroupBox(self)
@@ -60,16 +63,19 @@ class NavigationWidget(QWidget):
         self.__play_video_file_button = QPushButton(self)
         self.__play_video_file_button.setObjectName(u"play_video_file_button")
         self.__play_video_file_button.setText(u"Play Video")
+        self.__play_video_file_button.clicked.connect(play_video_callback)
         self.__groupbox_video_file_control_layout.addWidget(self.__play_video_file_button)
 
         self.__pause_video_file_button = QPushButton(self)
         self.__pause_video_file_button.setObjectName(u"pause_video_file_button")
         self.__pause_video_file_button.setText(u"Pause Video")
+        self.__pause_video_file_button.clicked.connect(pause_video_callback)
         self.__groupbox_video_file_control_layout.addWidget(self.__pause_video_file_button)
 
         self.__stop_video_file_button = QPushButton(self)
         self.__stop_video_file_button.setObjectName(u"stop_video_file_button")
         self.__stop_video_file_button.setText(u"Stop Video")
+        self.__stop_video_file_button.clicked.connect(stop_video_callback)
         self.__groupbox_video_file_control_layout.addWidget(self.__stop_video_file_button)
 
     def enable_video_controls(self):
