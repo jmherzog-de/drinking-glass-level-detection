@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, QWidget, 
 from qt_widgets import ROIWidget, ImageWidget, NavigationWidget
 from cv_videoplayer import VideoPlayer
 from pco_capture import QtVideoCapture
-# from bv_algorithms import AutoscaleImage
+from bv_algorithms import AutoscaleImage
 import numpy as np
 
 
@@ -30,8 +30,8 @@ class MainWindow(QMainWindow):
         self.roi_p1 = (0, 0)
         self.roi_p2 = (248, 2048)
 
-        # self.bv_scale = AutoscaleImage()
-        # self.bv_scale.create_lookup_table(t_min=1000, t_max=20000)
+        self.bv_scale = AutoscaleImage()
+        self.bv_scale.create_lookup_table(t_min=1000, t_max=20000)
 
         self.video_player = VideoPlayer()
         self.video_player.update_frame.connect(self.update_frame)
