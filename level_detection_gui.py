@@ -166,7 +166,7 @@ class MainWindow(QMainWindow):
         tab_index = self.main_tab.currentIndex()
 
         if tab_index == 1:
-            pass    # TODO Implement update feature for Reference Image Tab.
+            self.refimg_tab_widget.update_image(self.roi_widget.roi_image)
         elif tab_index == 2:
             pass    # TODO Implement update feature for Level Detection Tab.
 

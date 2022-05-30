@@ -1,6 +1,5 @@
 import ctypes
 import platform
-
 import numpy as np
 import os
 

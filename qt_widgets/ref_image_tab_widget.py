@@ -11,6 +11,9 @@ class RefImageTabWidget(QWidget):
         super().__init__()
 
         self.diff_distance: int = 0
+        self.active_frame = np.ndarray(shape=(2048, 2048), dtype='uint8')
+        self.ref_image = np.ndarray(shape=(2048, 2048), dtype='uint8')
+        self.diff_image = np.ndarray(shape=(2048, 2048), dtype='uint8')
 
         self.central_layout = QHBoxLayout(self)
         self.central_layout.setObjectName(u"central_layout")
@@ -25,6 +28,7 @@ class RefImageTabWidget(QWidget):
         self.select_ref_image_button = QPushButton()
         self.select_ref_image_button.setObjectName(u"select_ref_image_button")
         self.select_ref_image_button.setText(u"Select frame as Reference Image")
+        self.select_ref_image_button.clicked.connect(self.__save_ref_image)
         self.groupbox_reference_image_layout.addWidget(self.select_ref_image_button)
 
         self.reference_image = ImageWidget()
@@ -66,5 +70,16 @@ class RefImageTabWidget(QWidget):
         self.diff_distance = value
         self.current_distance_label.setText(f"{value}")
 
+    def __save_ref_image(self):
+        self.ref_image = self.active_frame.copy()
+        self.reference_image.update_image(self.ref_image)
+
+    def __create_difference_image(self):
+        self.diff_image = np.where(abs(self.active_frame.astype('float64') - self.ref_image.astype('float64')) > 80, 255, 0)
+        self.diff_image = self.diff_image.astype('uint8')
+        self.difference_image.update_image(self.diff_image)
+
     def update_image(self, frame: np.ndarray):
-        pass
+        self.active_frame = frame.copy()
+        self.live_image.update_image(frame)
+        self.__create_difference_image()
