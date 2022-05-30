@@ -1,10 +1,8 @@
 import sys
-
 import cv2
-from PySide6.QtCore import Qt, Slot
-from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, QWidget, QVBoxLayout, QTabWidget, QGroupBox,
-                               QHBoxLayout)
-from qt_widgets import ROIWidget, ImageWidget, NavigationWidget
+from PySide6.QtCore import Slot
+from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, QWidget, QVBoxLayout, QTabWidget, QHBoxLayout)
+from qt_widgets import NavigationWidget, RefImageTabWidget, ROITabWidget, LevelDetectionTabWidget
 from cv_videoplayer import VideoPlayer
 from pco_capture import QtVideoCapture
 from bv_algorithms import AutoscaleImage
@@ -27,8 +25,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.mode = "VIDEO"   # 'CAMERA' | 'VIDEO'
-        self.roi_p1 = (0, 0)
-        self.roi_p2 = (2048, 2048)
+        self.orig_image = np.zeros(shape=(2048, 2048), dtype='uint8')
 
         self.bv_scale = AutoscaleImage()
         self.bv_scale.create_lookup_table(t_min=1000, t_max=20000)
@@ -40,7 +37,7 @@ class MainWindow(QMainWindow):
         self.pco_stream.update_frame.connect(self.update_frame)
 
         self.setWindowTitle("Level Detection with PCO Camera")
-        self.setGeometry(0, 0, 800, 800)
+        # self.setGeometry(0, 0, 800, 800)
         self.showMaximized()
 
         #
@@ -77,33 +74,33 @@ class MainWindow(QMainWindow):
         self.roi_tab_page_layout = QHBoxLayout(self.roi_tab_page)
         self.roi_tab_page_layout.setObjectName(u"roi_tab_page_layout")
 
-        self.roi_widget = ROIWidget(self.roi_selected_callback)
+        self.roi_widget = ROITabWidget(roi_update_callback=self.roi_selected_callback)
         self.roi_widget.setObjectName(u"roi_widget")
-        self.roi_widget.setMaximumWidth(450)
-        self.roi_widget.setMaximumHeight(220)
-        self.roi_tab_page_layout.addWidget(self.roi_widget, Qt.AlignBottom)
+        self.roi_tab_page_layout.addWidget(self.roi_widget)
 
-        self.roi_images_groupbox = QGroupBox()
-        self.roi_images_groupbox.setObjectName(u"roi_images_groupbox")
-        self.roi_images_layout = QHBoxLayout(self.roi_images_groupbox)
-        self.roi_images_layout.setObjectName(u"roi_images_layout")
-        self.roi_tab_page_layout.addWidget(self.roi_images_groupbox)
-
-        self.roi_image = ImageWidget()
-        self.roi_image.setObjectName(u"roi_image")
-        self.roi_images_layout.addWidget(self.roi_image)
-
+        #
         # MainTab: Apply Reference Image
+        #
+
         self.refimg_tab_page = QWidget()
         self.refimg_tab_page.setObjectName(u"refimg_tab_page")
-        self.refimg_tab_page_layout = QVBoxLayout(self.refimg_tab_page)
+        self.refimg_tab_page_layout = QHBoxLayout(self.refimg_tab_page)
         self.refimg_tab_page_layout.setObjectName(u"refimg_tab_page_layout")
+
+        self.refimg_tab_widget = RefImageTabWidget()
+        self.refimg_tab_widget.setObjectName(u"refimg_tab_widget")
+        self.refimg_tab_page_layout.addWidget(self.refimg_tab_widget)
+
 
         # MainTab: Filling
         self.filling_tab_page = QWidget()
         self.filling_tab_page.setObjectName(u"filling_tab_page")
         self.filling_tab_page_layout = QVBoxLayout(self.filling_tab_page)
         self.filling_tab_page_layout.setObjectName(u"filling_tab_page_layout")
+
+        self.level_detection_tab_widget = LevelDetectionTabWidget()
+        self.level_detection_tab_widget.setObjectName(u"level_detection_tab_widget")
+        self.filling_tab_page_layout.addWidget(self.level_detection_tab_widget)
 
         self.main_tab.addTab(self.roi_tab_page, "1. Select ROI")
         self.main_tab.addTab(self.refimg_tab_page, "2. Apply Reference Image")
@@ -113,8 +110,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def roi_selected_callback(self):
-        self.roi_p1 = ( int(self.roi_widget.roi_text_edit_x1.text()), int(self.roi_widget.roi_text_edit_y1.text()))
-        self.roi_p2 = ( int(self.roi_widget.roi_text_edit_x2.text()), int(self.roi_widget.roi_text_edit_y2.text()))
+        pass    # TODO: Implement update frame on paused or ended video
 
     @Slot()
     def open_camera_stream_clicked(self):
@@ -153,22 +149,26 @@ class MainWindow(QMainWindow):
     def stop_stream_clicked(self):
         pass
 
-    def update_roi_image(self, image: np.ndarray):
-        cv2.rectangle(image, self.roi_p1, self.roi_p2, color=(255, 255, 255), thickness=3)
-        self.roi_image.update_image(image)
+    @Slot()
+    def save_reference_image_clicked(self):
+        pass
 
     def update_frame(self, frame: np.ndarray):
         # Preprocess image before update on GUI
         if self.mode == "VIDEO":
-            image = frame    # Input image is a 8 bit image
+            self.orig_image = frame    # Input image is a 8 bit image
         else:
             image = self.bv_scale.autoscale(frame)    # Input image is a 16 bit image
-            image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+            self.orig_image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+
+        self.roi_widget.update_image(self.orig_image)
 
         tab_index = self.main_tab.currentIndex()
 
-        if tab_index == 0:
-            self.update_roi_image(image)
+        if tab_index == 1:
+            pass    # TODO Implement update feature for Reference Image Tab.
+        elif tab_index == 2:
+            pass    # TODO Implement update feature for Level Detection Tab.
 
 
 if __name__ == '__main__':
