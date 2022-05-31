@@ -10,7 +10,8 @@ class RefImageTabWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.diff_distance: int = 0
+        self.diff_distance: int = 10
+        self.__diff_image_set = False
         self.active_frame = np.ndarray(shape=(2048, 2048), dtype='uint8')
         self.ref_image = np.ndarray(shape=(2048, 2048), dtype='uint8')
         self.diff_image = np.ndarray(shape=(2048, 2048), dtype='uint8')
@@ -73,13 +74,19 @@ class RefImageTabWidget(QWidget):
     def __save_ref_image(self):
         self.ref_image = self.active_frame.copy()
         self.reference_image.update_image(self.ref_image)
+        self.__diff_image_set = True
 
     def __create_difference_image(self):
-        self.diff_image = np.where(abs(self.active_frame.astype('float64') - self.ref_image.astype('float64')) > 80, 255, 0)
+        self.diff_image = abs(self.active_frame.astype('float64') - self.ref_image.astype('float64'))
+        self.diff_image = np.where(self.diff_image > self.diff_distance, 255, 0)
         self.diff_image = self.diff_image.astype('uint8')
         self.difference_image.update_image(self.diff_image)
 
     def update_image(self, frame: np.ndarray):
         self.active_frame = frame.copy()
+        # TODO Delete later
+        # frame = cv2.adaptiveThreshold(frame, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 495, 5)
         self.live_image.update_image(frame)
-        self.__create_difference_image()
+
+        if self.__diff_image_set:
+            self.__create_difference_image()
