@@ -24,6 +24,7 @@ class MainWindow(QMainWindow):
         """
         super().__init__()
 
+        self.frame_counter = 0
         self.mode = "VIDEO"   # 'CAMERA' | 'VIDEO'
         self.orig_image = np.zeros(shape=(2048, 2048), dtype='uint8')
 
@@ -74,7 +75,8 @@ class MainWindow(QMainWindow):
         self.roi_tab_page_layout = QHBoxLayout(self.roi_tab_page)
         self.roi_tab_page_layout.setObjectName(u"roi_tab_page_layout")
 
-        self.roi_widget = ROITabWidget(roi_update_callback=self.roi_selected_callback)
+        self.roi_widget = ROITabWidget(roi_update_callback=self.roi_selected_callback,
+                                       default_p1=(600, 500), default_p2=(1300, 1700))
         self.roi_widget.setObjectName(u"roi_widget")
         self.roi_tab_page_layout.addWidget(self.roi_widget)
 
@@ -91,8 +93,9 @@ class MainWindow(QMainWindow):
         self.refimg_tab_widget.setObjectName(u"refimg_tab_widget")
         self.refimg_tab_page_layout.addWidget(self.refimg_tab_widget)
 
-
+        #
         # MainTab: Filling
+        #
         self.filling_tab_page = QWidget()
         self.filling_tab_page.setObjectName(u"filling_tab_page")
         self.filling_tab_page_layout = QVBoxLayout(self.filling_tab_page)
@@ -143,11 +146,14 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def start_stream_clicked(self):
-        pass
+        self.mode = 'CAMERA'
+
+        self.pco_stream.capture_enabled = True
+        self.pco_stream.start()
 
     @Slot()
     def stop_stream_clicked(self):
-        pass
+        self.pco_stream.capture_enabled = False
 
     @Slot()
     def save_reference_image_clicked(self):
@@ -165,10 +171,12 @@ class MainWindow(QMainWindow):
 
         tab_index = self.main_tab.currentIndex()
 
-        if tab_index == 1:
+        if tab_index == 1 or tab_index == 2:
             self.refimg_tab_widget.update_image(self.roi_widget.roi_image)
-        elif tab_index == 2:
-            pass    # TODO Implement update feature for Level Detection Tab.
+        if tab_index == 2 and self.frame_counter == 2:
+            self.level_detection_tab_widget.update_image(self.refimg_tab_widget.diff_image)
+
+        self.frame_counter = 0 if self.frame_counter == 2 else self.frame_counter + 1
 
 
 if __name__ == '__main__':
