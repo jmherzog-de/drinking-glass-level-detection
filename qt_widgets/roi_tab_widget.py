@@ -74,6 +74,7 @@ class ROITabWidget(QWidget):
         self.__roi_update_callback_fct()
 
     def update_image(self, frame: np.ndarray):
-        self.roi_image = frame[self.__p1[1]:self.__p2[1], self.__p1[0]:self.__p2[0]]
-        frame = cv2.rectangle(frame, self.__p1, self.__p2, color=(255, 255, 255), thickness=3)
+        self.roi_image = frame[self.__p1[1]:self.__p2[1], self.__p1[0]:self.__p2[0]].copy()
+        frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+        frame = cv2.rectangle(frame, self.__p1, self.__p2, color=(255, 0, 0), thickness=3)
         self.roi_image_widget.update_image(frame)
