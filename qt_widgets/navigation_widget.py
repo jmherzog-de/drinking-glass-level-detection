@@ -89,3 +89,11 @@ class NavigationWidget(QWidget):
 
     def disable_stream_controls(self):
         self.__groupbox_stream_control.setEnabled(False)
+
+    def enable_start_stream_control(self):
+        self.__stop_stream_button.setEnabled(False)
+        self.__start_stream_button.setEnabled(True)
+
+    def disable_start_stream_control(self):
+        self.__stop_stream_button.setEnabled(False)
+        self.__start_stream_button.setEnabled(True)
