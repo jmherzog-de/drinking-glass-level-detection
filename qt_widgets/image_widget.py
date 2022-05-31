@@ -21,12 +21,21 @@ class ImageWidget(QWidget):
         self.central_layout.addWidget(self.__image)
 
     def __convert_cv_qt(self, image: np.ndarray):
-        h, w = image.shape
+        h, w, c = None, None, None
+        if len(image.shape) == 2:
+            h, w = image.shape
+        elif len(image.shape) == 3:
+            h, w, c = image.shape
+        else:
+            raise Exception("Invalid frame input.\n")
 
         if str(image.dtype) == "uint16":
             q_image = QImage(image.data, w, h, w * 2, QImage.Format_Grayscale16)
         else:
-            q_image = QImage(image.data, w, h, w, QImage.Format_Grayscale8)
+            if c is None:
+                q_image = QImage(image.data, w, h, w, QImage.Format_Grayscale8)
+            else:
+                q_image = QImage(image.data, w, h, w * 3, QImage.Format_RGB888)
 
         return q_image.scaled(self.__image.width(), self.__image.height(), Qt.KeepAspectRatio)
 
