@@ -1,6 +1,5 @@
 import cv2
-from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QGroupBox, QFormLayout, QLineEdit, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QGroupBox
 from .image_widget import ImageWidget
 import numpy as np
 
@@ -22,10 +21,9 @@ class LevelDetectionTabWidget(QWidget):
         self.contours_image_widget = ImageWidget()
         self.contours_image_widget.setObjectName(u"contours_image_widget")
         self.groupbbox_contours_layout.addWidget(self.contours_image_widget)
-
         self.central_layout.addWidget(self.groupbbox_contours)
 
-    def update_image(self, frame: np.ndarray):
+    def __contours_image(self, frame: np.ndarray):
         kernel = np.ones((5, 5), np.uint8)
         frame = cv2.erode(frame, kernel, 2)
         frame = cv2.dilate(frame, kernel, 3)
@@ -33,6 +31,10 @@ class LevelDetectionTabWidget(QWidget):
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
         for cnt in contours:
             cnt_area = cv2.contourArea(cnt)
-            x, y, w, h = cv2.boundingRect(cnt)
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 3)
+            if cnt_area > 150:
+                x, y, w, h = cv2.boundingRect(cnt)
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 3)
         self.contours_image_widget.update_image(frame)
+
+    def update_image(self, diff_frame: np.ndarray):
+        self.__contours_image(diff_frame.copy())
