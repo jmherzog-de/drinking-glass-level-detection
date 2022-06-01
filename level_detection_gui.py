@@ -2,7 +2,7 @@ import sys
 import cv2
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, QWidget, QVBoxLayout, QTabWidget, QHBoxLayout)
-from qt_widgets import NavigationWidget, RefImageTabWidget, ROITabWidget, LevelDetectionTabWidget
+from qt_widgets import NavigationWidget, RefImageTabWidget, ROITabWidget, LevelDetectionTabWidget, GlasDetectionTabWidget
 from cv_videoplayer import VideoPlayer
 from pco_capture import QtVideoCapture
 from bv_algorithms import AutoscaleImage
@@ -81,6 +81,18 @@ class MainWindow(QMainWindow):
         self.roi_tab_page_layout.addWidget(self.roi_widget)
 
         #
+        # MainTab: Glas Detection
+        #
+        self.glas_detection_tab_page = QWidget()
+        self.glas_detection_tab_page.setObjectName(u"glas_detection_tab_page")
+        self.glas_detection_tab_page_layout = QHBoxLayout(self.glas_detection_tab_page)
+        self.glas_detection_tab_page_layout.setObjectName(u"glas_detection_tab_page_layout")
+
+        self.glas_detection_tab_widget = GlasDetectionTabWidget()
+        self.glas_detection_tab_widget.setObjectName(u"glas_detection_tab_widget")
+        self.glas_detection_tab_page_layout.addWidget(self.glas_detection_tab_widget)
+
+        #
         # MainTab: Apply Reference Image
         #
 
@@ -106,8 +118,9 @@ class MainWindow(QMainWindow):
         self.filling_tab_page_layout.addWidget(self.level_detection_tab_widget)
 
         self.main_tab.addTab(self.roi_tab_page, "1. Select ROI")
-        self.main_tab.addTab(self.refimg_tab_page, "2. Apply Reference Image")
-        self.main_tab.addTab(self.filling_tab_page, "3. Level Detection")
+        self.main_tab.addTab(self.glas_detection_tab_page, "2. Glas Detection")
+        self.main_tab.addTab(self.refimg_tab_page, "3. Apply Reference Image")
+        self.main_tab.addTab(self.filling_tab_page, "4. Level Detection")
 
         self.setCentralWidget(self.central_widget)
 
@@ -171,9 +184,11 @@ class MainWindow(QMainWindow):
 
         tab_index = self.main_tab.currentIndex()
 
-        if tab_index == 1 or tab_index == 2:
+        if tab_index == 2 or tab_index == 3:
             self.refimg_tab_widget.update_image(self.roi_widget.roi_image)
-        if tab_index == 2 and self.frame_counter == 2:
+        if tab_index == 1:
+            self.glas_detection_tab_widget.update_image(self.roi_widget.roi_image)
+        if tab_index == 3 and self.frame_counter == 2:
             self.level_detection_tab_widget.update_image(self.refimg_tab_widget.diff_image)
 
         self.frame_counter = 0 if self.frame_counter == 2 else self.frame_counter + 1

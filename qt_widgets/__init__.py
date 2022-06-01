@@ -8,3 +8,4 @@ from .ref_image_controls import ReferenceImageControlsWidget
 from .roi_tab_widget import ROITabWidget
 from .ref_image_tab_widget import RefImageTabWidget
 from .level_detection_tab_widget import LevelDetectionTabWidget
+from .glas_detection_widget import GlasDetectionTabWidget
