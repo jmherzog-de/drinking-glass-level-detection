@@ -25,6 +25,8 @@ class GlasDetectionTabWidget(QWidget):
 
     def update_image(self, frame: np.ndarray):
         frame = cv2.blur(frame, (3, 3), cv2.BORDER_DEFAULT)
-        frame = cv2.Canny(frame, 40, 150)
+        # _, frame = cv2.threshold(frame, 50, 255, cv2.THRESH_BINARY)
+        frame = cv2.Canny(frame, 10, 200)
         frame = cv2.dilate(frame, np.ones((5, 5), np.uint8), 8)
+
         self.glas_extraction_image_widget.update_image(frame)
