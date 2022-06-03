@@ -84,8 +84,6 @@ class RefImageTabWidget(QWidget):
 
     def update_image(self, frame: np.ndarray):
         self.active_frame = frame.copy()
-        # TODO Delete later
-        # frame = cv2.adaptiveThreshold(frame, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 495, 5)
         self.live_image.update_image(frame)
 
         if self.__diff_image_set:
