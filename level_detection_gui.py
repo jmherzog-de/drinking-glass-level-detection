@@ -178,7 +178,7 @@ class MainWindow(QMainWindow):
             self.orig_image = frame    # Input image is a 8 bit image
         else:
             image = self.bv_scale.autoscale(frame)    # Input image is a 16 bit image
-            self.orig_image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+            self.orig_image = cv2.normalize(frame, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
         self.roi_widget.update_image(self.orig_image)
 
