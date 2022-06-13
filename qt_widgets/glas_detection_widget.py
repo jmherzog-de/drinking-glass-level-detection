@@ -10,7 +10,7 @@ class GlasDetectionTabWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.__glas_detector = bv.GlasDetection()
+        self.glas_detector = bv.GlasDetection()
 
         self.glas_detected: bool = False
         self.detected_glas_frames = []
@@ -74,15 +74,13 @@ class GlasDetectionTabWidget(QWidget):
         :return:
         """
 
-        self.__glas_detector.detect(frame)
+        self.glas_detector.detect(frame)
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
 
-        x, y, x2, y2 = self.__glas_detector.estimated_glas()
-        if self.__glas_detector.state():
+        x, y, x2, y2 = self.glas_detector.estimated_glas()
+        if self.glas_detector.state():
             cv2.rectangle(frame, (x, y), (x2, y2), (0, 255, 0), 3)
         elif x is not None:
             cv2.rectangle(frame, (x, y), (x2, y2), (255, 255, 0), 3)
-
-        # frame = self.detect_glas(frame)
 
         self.glas_extraction_image_widget.update_image(frame)
