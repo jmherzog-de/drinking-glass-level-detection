@@ -1,4 +1,5 @@
 import cv2
+import operator
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QGroupBox, QFormLayout, QLineEdit
 from .image_widget import ImageWidget
@@ -10,6 +11,8 @@ class ROITabWidget(QWidget):
     def __init__(self, roi_update_callback, default_p1: tuple = (0, 0), default_p2: tuple = (2048, 2048)):
         super().__init__()
         self.__roi_update_callback_fct = roi_update_callback
+        self.__glas_p1 = (0, 0)
+        self.__glas_p2 = (0, 0)
         self.__p1 = default_p1
         self.__p2 = default_p2
         self.roi_image = np.zeros(shape=(2048, 2048), dtype='uint8')
@@ -73,8 +76,28 @@ class ROITabWidget(QWidget):
         self.__p2 = (int(self.roi_textbox_x2.text()), int(self.roi_textbox_y2.text()))
         self.__roi_update_callback_fct()
 
+    def update_roi(self, p1: tuple, p2: tuple):
+        self.__p1 = p1
+        self.__p2 = p2
+        self.roi_textbox_x1.setText(str(p1[0]))
+        self.roi_textbox_y1.setText(str(p1[1]))
+        self.roi_textbox_x2.setText(str(p2[0]))
+        self.roi_textbox_y2.setText(str(p2[1]))
+
+    def update_glas_rect(self, p1: tuple, p2: tuple):
+
+        # Transform detected glas points into original frame size
+        self.__glas_p1 = tuple(map(operator.add, self.__p1, p1))
+        self.__glas_p2 = tuple(map(operator.add, self.__p1, p2))
+
     def update_image(self, frame: np.ndarray):
+
         self.roi_image = frame[self.__p1[1]:self.__p2[1], self.__p1[0]:self.__p2[0]].copy()
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+
+        if not self.__glas_p2 == (0, 0):
+            frame = cv2.rectangle(frame, self.__glas_p1, self.__glas_p2, color=(0, 255, 0), thickness=2)
+
         frame = cv2.rectangle(frame, self.__p1, self.__p2, color=(255, 0, 0), thickness=3)
+
         self.roi_image_widget.update_image(frame)
