@@ -2,6 +2,7 @@ import cv2
 from PySide6.QtCore import Slot, Qt
 from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QGroupBox, QSlider, QVBoxLayout, QLabel
 from .image_widget import ImageWidget
+import bv_algorithms as bv
 import numpy as np
 
 
@@ -76,15 +77,10 @@ class RefImageTabWidget(QWidget):
         self.reference_image.update_image(self.ref_image)
         self.__diff_image_set = True
 
-    def __create_difference_image(self):
-        self.diff_image = abs(self.active_frame.astype('float64') - self.ref_image.astype('float64'))
-        self.diff_image = np.where(self.diff_image > self.diff_distance, 255, 0)
-        self.diff_image = self.diff_image.astype('uint8')
-        self.difference_image.update_image(self.diff_image)
-
     def update_image(self, frame: np.ndarray):
         self.active_frame = frame.copy()
         self.live_image.update_image(frame)
 
         if self.__diff_image_set:
-            self.__create_difference_image()
+            self.diff_image = bv.difference_image(self.ref_image.copy(), self.active_frame, self.diff_distance)
+            self.difference_image.update_image(self.diff_image)
