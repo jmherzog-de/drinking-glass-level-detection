@@ -76,7 +76,7 @@ class MainWindow(QMainWindow):
         self.roi_tab_page_layout.setObjectName(u"roi_tab_page_layout")
 
         self.roi_widget = ROITabWidget(roi_update_callback=self.roi_selected_callback,
-                                       default_p1=(500, 450), default_p2=(1300, 1750))
+                                       default_p1=(500, 450), default_p2=(1300, 1800))
         self.roi_widget.setObjectName(u"roi_widget")
         self.roi_tab_page_layout.addWidget(self.roi_widget)
 
@@ -126,7 +126,6 @@ class MainWindow(QMainWindow):
     @Slot()
     def roi_selected_callback(self):
         pass    # TODO: Implement update frame on paused or ended video
-
 
     @Slot()
     def open_camera_stream_clicked(self):
@@ -178,21 +177,24 @@ class MainWindow(QMainWindow):
             self.orig_image = frame    # Input image is a 8 bit image
         else:
             image = self.bv_scale.autoscale(frame)    # Input image is a 16 bit image
-            self.orig_image = cv2.normalize(frame, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+            self.orig_image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
-        # Update ROI params when glas detected
+        # Display detected glas region
         if self.glas_detection_tab_widget.glas_detector.state():
+            glas_stencil = self.glas_detection_tab_widget.glas_detector.get_glas_stencil()
+            self.level_detection_tab_widget.level_detector.set_glas_stencil(glas_stencil)
             x1, y1, x2, y2 = self.glas_detection_tab_widget.glas_detector.estimated_glas()
             self.roi_widget.update_glas_rect((x1, y1), (x2, y2))
 
         self.roi_widget.update_image(self.orig_image)
+        self.glas_detection_tab_widget.update_image(self.roi_widget.roi_image)
 
         tab_index = self.main_tab.currentIndex()
 
         if tab_index == 2 or tab_index == 3:
-            self.refimg_tab_widget.update_image(self.roi_widget.roi_image)
-        if tab_index == 1 or not self.glas_detection_tab_widget.glas_detector.state():
-            self.glas_detection_tab_widget.update_image(self.roi_widget.roi_image)
+            if self.glas_detection_tab_widget.glas_detector.state():
+                f = self.glas_detection_tab_widget.glas_detector.get_glas_frame()
+                self.refimg_tab_widget.update_image(f.copy())
         if tab_index == 3 and self.frame_counter == 2:
             self.level_detection_tab_widget.update_image(self.refimg_tab_widget.diff_image)
 
