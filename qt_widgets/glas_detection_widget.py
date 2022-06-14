@@ -1,8 +1,9 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QGroupBox
-from .image_widget import ImageWidget
 import cv2
 import numpy as np
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QGroupBox
+
 import bv_algorithms as bv
+from .image_widget import ImageWidget
 
 
 class GlasDetectionTabWidget(QWidget):
@@ -29,43 +30,12 @@ class GlasDetectionTabWidget(QWidget):
         self.glas_extraction_image_widget = ImageWidget()
         self.glas_extraction_image_widget.setObjectName(u"glas_extraction_image_widget")
         self.groupbox_glas_extraction_layout.addWidget(self.glas_extraction_image_widget)
+
+        self.glas_stencil_widget = ImageWidget()
+        self.glas_stencil_widget.setObjectName(u"glas_stencil_image_widget")
+        self.groupbox_glas_extraction_layout.addWidget(self.glas_stencil_widget)
+
         self.central_layout.addWidget(self.groupbox_glas_extraction)
-
-    def detect_glas(self, frame: np.ndarray):
-
-        ret = bv.glas_detection(frame.copy())
-
-        # No glas detected on this frame
-        if ret is None:
-            self.cycles_counter = 0
-            return
-
-        frame, x, y, w, h = ret
-
-        # Currently, there is no detected BoundingBox available
-        if self.ref_pos == (0, 0, 0, 0):
-            self.ref_pos = (x, y, x + w, y + h)
-            return
-
-        if abs(self.ref_pos[0] - x) > 10 or abs(self.ref_pos[1] - y) > 10 or abs(self.ref_pos[2] - w) > 30 or \
-                abs(self.ref_pos[3] - h) > 30:
-            self.ref_pos = (x, y, x+w, y+h)
-            self.cycles_counter = 0
-        else:
-            self.cycles_counter += 1
-
-        # Draw the found bounding-box
-        frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-
-        if self.cycles_counter >= 30:
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
-            self.glas_detected = True
-        else:
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 0), 3)
-
-        print(self.cycles_counter)
-
-        return frame
 
     def update_image(self, frame: np.ndarray):
         """
@@ -74,11 +44,12 @@ class GlasDetectionTabWidget(QWidget):
         :return:
         """
 
-        self.glas_detector.detect(frame)
+        frame = self.glas_detector.detect(frame)
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
 
         x, y, x2, y2 = self.glas_detector.estimated_glas()
         if self.glas_detector.state():
+            self.glas_stencil_widget.update_image(self.glas_detector.get_glas_stencil())
             cv2.rectangle(frame, (x, y), (x2, y2), (0, 255, 0), 3)
         elif x is not None:
             cv2.rectangle(frame, (x, y), (x2, y2), (255, 255, 0), 3)

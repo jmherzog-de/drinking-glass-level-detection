@@ -1,5 +1,4 @@
-import cv2
-from PySide6.QtCore import Slot, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QGroupBox, QSlider, QVBoxLayout, QLabel
 from .image_widget import ImageWidget
 import bv_algorithms as bv
@@ -11,8 +10,9 @@ class RefImageTabWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.diff_distance: int = 10
         self.__diff_image_set = False
+        self.__diff_image_builder = bv.DifferenceImageBuilder()
+
         self.active_frame = np.ndarray(shape=(2048, 2048), dtype='uint8')
         self.ref_image = np.ndarray(shape=(2048, 2048), dtype='uint8')
         self.diff_image = np.ndarray(shape=(2048, 2048), dtype='uint8')
@@ -57,7 +57,7 @@ class RefImageTabWidget(QWidget):
 
         self.current_distance_label = QLabel()
         self.current_distance_label.setObjectName(u"current_distance_label")
-        self.current_distance_label.setText(f"{self.diff_distance}")
+        self.current_distance_label.setText(f"{self.__diff_image_builder.distance}")
         self.current_distance_label.setMaximumHeight(20)
         self.groupbox_difference_image_layout.addWidget(self.current_distance_label)
 
@@ -69,12 +69,12 @@ class RefImageTabWidget(QWidget):
         self.central_layout.addWidget(self.groupbox_difference_image)
 
     def __slider_value_changed(self, value: int):
-        self.diff_distance = value
+        self.__diff_image_builder.distance = value
         self.current_distance_label.setText(f"{value}")
 
     def __save_ref_image(self):
-        self.ref_image = self.active_frame.copy()
-        self.reference_image.update_image(self.ref_image)
+        self.__diff_image_builder.set_reference_image(self.active_frame.copy())
+        self.reference_image.update_image(self.active_frame.copy())
         self.__diff_image_set = True
 
     def update_image(self, frame: np.ndarray):
@@ -82,5 +82,5 @@ class RefImageTabWidget(QWidget):
         self.live_image.update_image(frame)
 
         if self.__diff_image_set:
-            self.diff_image = bv.difference_image(self.ref_image.copy(), self.active_frame, self.diff_distance)
+            self.diff_image = self.__diff_image_builder.build(self.active_frame)
             self.difference_image.update_image(self.diff_image)

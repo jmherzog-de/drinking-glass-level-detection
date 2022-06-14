@@ -9,6 +9,8 @@ class LevelDetectionTabWidget(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.level_detector = bv.LevelDetector()
+
         self.central_layout = QHBoxLayout(self)
         self.central_layout.setObjectName(u"central_layout")
 
@@ -24,5 +26,5 @@ class LevelDetectionTabWidget(QWidget):
         self.central_layout.addWidget(self.groupbbox_contours)
 
     def update_image(self, diff_frame: np.ndarray):
-        new_frame = bv.level_detection(diff_frame.copy())
+        new_frame = self.level_detector.detect(diff_frame.copy())
         self.contours_image_widget.update_image(new_frame)
