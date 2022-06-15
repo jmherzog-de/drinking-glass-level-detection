@@ -174,10 +174,3 @@ class DifferenceImageBuilder(object):
 
     def set_reference_image(self, frame: np.ndarray):
         self.__ref_image = frame.copy()
-
-
-def difference_image(ref_frame: np.ndarray, frame: np.ndarray, distance: int):
-    diff_image = abs(frame.astype('float64') - ref_frame.astype('float64'))
-    diff_image = np.where(diff_image >= distance, 255, 0)
-    diff_image = diff_image.astype('uint8')
-    return diff_image
