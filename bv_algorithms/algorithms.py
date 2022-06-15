@@ -28,8 +28,9 @@ class GlasDetection(object):
         # find left and right edge of the glas
         for yi in range_y:
             t = np.where(frame[yi] > 0)
-            t1 = t[0][0]
-            t2 = t[0][-1]
+            if len(t) > 0 and len(t[0]) > 0:
+                t1 = t[0][0]
+                t2 = t[0][-1]
             self.__stencil_frame[yi][t1] = 0
             self.__stencil_frame[yi][t2] = 0
 
@@ -54,18 +55,20 @@ class GlasDetection(object):
     def detect(self, frame: np.ndarray):
 
         orig_frame = frame.copy()
-        frame = cv2.blur(frame, (3, 3), cv2.BORDER_DEFAULT)
+        frame = cv2.blur(frame, (7, 7), cv2.BORDER_DEFAULT)
 
         #
         # Image Processing with Sobel Operator
         #
-        grad_x = cv2.Sobel(frame, cv2.CV_16S, 1, 0, ksize=3, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT)
-        grad_y = cv2.Sobel(frame, cv2.CV_16S, 0, 1, ksize=3, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT)
+        grad_x = cv2.Sobel(frame, cv2.CV_16S, 1, 0, ksize=5, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT)
+        grad_y = cv2.Sobel(frame, cv2.CV_16S, 0, 1, ksize=5, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT)
 
         abs_grad_x = cv2.convertScaleAbs(grad_x)
         abs_grad_y = cv2.convertScaleAbs(grad_y)
         weighted = cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
         _, frame = cv2.threshold(weighted, 40, 100, cv2.THRESH_BINARY)
+
+        frame = cv2.dilate(frame, (7, 7), 7)
 
         if self.__detected:
             self.__glas_frame = orig_frame[
