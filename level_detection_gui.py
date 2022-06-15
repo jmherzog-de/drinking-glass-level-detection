@@ -76,7 +76,7 @@ class MainWindow(QMainWindow):
         self.roi_tab_page_layout.setObjectName(u"roi_tab_page_layout")
 
         self.roi_widget = ROITabWidget(roi_update_callback=self.roi_selected_callback,
-                                       default_p1=(500, 450), default_p2=(1300, 1800))
+                                       default_p1=(500, 250), default_p2=(1300, 1850))
         self.roi_widget.setObjectName(u"roi_widget")
         self.roi_tab_page_layout.addWidget(self.roi_widget)
 
