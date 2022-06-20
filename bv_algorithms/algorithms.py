@@ -11,44 +11,88 @@ class GlasDetection(object):
         self.__ref_contour: tuple = (0, 0, 0, 0)
         self.__cycle_counter: int = 0
         self.__stencil_frame: np.ndarray = None
+        self.__mask_frame: np.ndarray = None
+        self.__stencil_contours_frame = None
         self.__glas_frame: np.ndarray = None
 
         # public variables
         self.abs_pixel_tolerance: int = 10
         self.detection_cycles: int = 30
+        self.mask_offset_top: float = 0.1
+        self.mask_offset_bottom: float = 0.1
+        self.mask_offset_left: float = 0.0
+        self.mask_offset_right: float = 0.0
 
     def create_stencil(self, frame: np.ndarray):
 
-        height = self.__ref_contour[3]
-        width = self.__ref_contour[2]
-        self.__stencil_frame = np.full(shape=(height, width), fill_value=255, dtype='uint8')
-        range_x = range(width)
-        range_y = range(height)
+        # Extract height and width of the detected glas BoundingBox
+        (height, width) = self.__ref_contour[3], self.__ref_contour[2]
 
-        # find left and right edge of the glas
+        # Create a mask with all black pixels
+        self.__stencil_frame = np.full(shape=(height, width), fill_value=0, dtype='uint8')
+
+        # range_y = range(int(height*0.1), int(height-(height*0.1)), 1)
+
+        # Get contours of within the glas BoundingBox
+        range_y = range(height)
+        self.__stencil_contours_frame = np.zeros(frame.shape)
+        contours, hierarchy = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area > 450:
+                cv2.drawContours(self.__stencil_contours_frame, cnt, -1, (255, 255, 255), 1)
+                self.__stencil_frame = cv2.fillPoly(self.__stencil_frame, pts=[cnt], color=(255, 255, 255))
+
+        # Repair broken edge detection of the glas.
+        # Note: This appears mainly at the above part of the glas.
+
+        # 1. Close holes with morphological filters
+        self.__stencil_frame = cv2.dilate(self.__stencil_frame, np.ones((31, 31), np.uint8), 1)
+
+        # 2. Close cylinder contour of the glas
+        # Note: Based on the mean of each edge-side...
+        (mean_right, mean_left, n_mean) = (0, 0, 0)
+
+        # Iterate all lines
         for yi in range_y:
-            t = np.where(frame[yi] > 0)
+            t = np.where(self.__stencil_frame[yi][0:-1] == 255)     # Extract all pixels of the glas
+
+            if len(t) > 0 and len(t[0]) > 0:
+                # Extract left first edge and right first edge
+                t1 = t[0][0]
+                t2 = t[0][-1]
+
+                if int(height * 0.1) < yi < int(height - height * 0.1):
+                    n_mean += 1
+                    mean_left += t1
+                    mean_right += t2
+                self.__stencil_frame[yi][t1:t2] = 255   # Fill all pixels between left and right edge
+
+        mean_right = mean_right / n_mean
+        mean_left = mean_left / n_mean
+
+        # 3. Reconstruct cylinder contour for failed contour detection.
+        # Note: Mean pixel position used to determine the approximated right place for the edge pixel
+        range_y = range(int(height*0.1), int(height-(height*0.1)), 1)   # Ignore 10 % of the height from top and bottom
+        for yi in range_y:
+            t = np.where(self.__stencil_frame[yi][0:-1] == 255)
             if len(t) > 0 and len(t[0]) > 0:
                 t1 = t[0][0]
                 t2 = t[0][-1]
-            self.__stencil_frame[yi][t1] = 0
-            self.__stencil_frame[yi][t2] = 0
 
-        # find top edge of the glas
-        for xi in range_x:
-            for yi in range_y:
-                if frame[yi][xi] > 0:
-                    self.__stencil_frame[yi][xi] = 0
-                    break
-                else:
-                    self.__stencil_frame[yi][xi] = 0
-            for yi in reversed(range_y):
-                if frame[yi][xi] > 0:
-                    self.__stencil_frame[yi][xi] = 0
-                    break
-                else:
-                    self.__stencil_frame[yi][xi] = 0
-        self.__stencil_frame = cv2.erode(self.__stencil_frame, np.ones((9, 9), np.uint8), 1)
+                if mean_right - t2 > 0:
+                    self.__stencil_frame[yi][t1:int(mean_right)] = 255
+                if t1 - mean_left > 0:
+                    self.__stencil_frame[yi][int(mean_left):t2] = 255
+
+        self.__mask_frame = self.__stencil_frame.copy()
+        for yi in range(0, int(height*0.1)):
+            self.__mask_frame[yi] = 0
+        for yi in range(int(height-height*0.1), height):
+            self.__mask_frame[yi] = 0
+
+        cv2.imshow("IMAGE", self.__mask_frame)
+        cv2.waitKey(1)
 
         return
 
@@ -66,9 +110,7 @@ class GlasDetection(object):
         abs_grad_x = cv2.convertScaleAbs(grad_x)
         abs_grad_y = cv2.convertScaleAbs(grad_y)
         weighted = cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
-        _, frame = cv2.threshold(weighted, 40, 100, cv2.THRESH_BINARY)
-
-        frame = cv2.dilate(frame, (7, 7), 7)
+        _, frame = cv2.threshold(weighted, 40, 255, cv2.THRESH_BINARY)
 
         if self.__detected:
             self.__glas_frame = orig_frame[
@@ -112,6 +154,9 @@ class GlasDetection(object):
     def get_glas_stencil(self):
         return self.__stencil_frame
 
+    def get_glas_mask(self):
+        return self.__mask_frame
+
     def get_glas_frame(self):
         return self.__glas_frame
 
@@ -130,22 +175,26 @@ class GlasDetection(object):
 class LevelDetector(object):
 
     def __init__(self):
-        self.__glas_stencil = None
+        self.__glas_mask: np.ndarray = None
+        self.__current_level_pixel: int = 0
 
     def detect(self, frame: np.ndarray):
 
-        if self.__glas_stencil is None:
+        if self.__glas_mask is None:
             return frame
 
         frame = cv2.bitwise_and(self.__glas_stencil, frame)
 
         kernel = np.ones((7, 7), np.uint8)
-        frame = cv2.erode(frame, kernel, 3)
-        # frame = cv2.dilate(frame, kernel, 3)
+        frame = cv2.erode(frame, kernel, 1)
+        frame = cv2.dilate(frame, kernel, 3)
+
+        cv2.imshow("LEVEL_DETECTOR", frame)
+        cv2.waitKey(1)
 
         grad_y = cv2.Sobel(frame, cv2.CV_16S, 0, 1, ksize=3, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT)
         abs_grad_y = cv2.convertScaleAbs(grad_y)
-        _, frame = cv2.threshold(abs_grad_y, 40, 100, cv2.THRESH_BINARY)
+        _, frame = cv2.threshold(abs_grad_y, 30, 255, cv2.THRESH_BINARY)
 
         contours, hierarchy = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
@@ -157,8 +206,8 @@ class LevelDetector(object):
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 3)
         return frame
 
-    def set_glas_stencil(self, stencil: np.ndarray):
-        self.__glas_stencil = stencil.copy()
+    def set_glas_mask(self, mask: np.ndarray):
+        self.__glas_mask = mask.copy()
 
 
 class DifferenceImageBuilder(object):
