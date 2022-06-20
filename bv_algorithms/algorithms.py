@@ -86,9 +86,9 @@ class GlasDetection(object):
                     self.__stencil_frame[yi][int(mean_left):t2] = 255
 
         self.__mask_frame = self.__stencil_frame.copy()
-        for yi in range(0, int(height*0.1)):
+        for yi in range(0, int(height * self.mask_offset_top)):
             self.__mask_frame[yi] = 0
-        for yi in range(int(height-height*0.1), height):
+        for yi in range(int(height-height * self.mask_offset_bottom), height):
             self.__mask_frame[yi] = 0
 
         cv2.imshow("IMAGE", self.__mask_frame)
@@ -183,11 +183,12 @@ class LevelDetector(object):
         if self.__glas_mask is None:
             return frame
 
-        frame = cv2.bitwise_and(self.__glas_stencil, frame)
+        frame = cv2.bitwise_and(self.__glas_mask, frame)
 
         kernel = np.ones((7, 7), np.uint8)
         frame = cv2.erode(frame, kernel, 1)
-        frame = cv2.dilate(frame, kernel, 3)
+        kernel = np.ones((13, 13), np.uint8)
+        frame = cv2.dilate(frame, kernel, 1)
 
         cv2.imshow("LEVEL_DETECTOR", frame)
         cv2.waitKey(1)
@@ -204,6 +205,7 @@ class LevelDetector(object):
             x, y, w, h = cv2.boundingRect(cnt)
             if cnt_area > 450 and 1.5 * w > h:
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 3)
+
         return frame
 
     def set_glas_mask(self, mask: np.ndarray):
