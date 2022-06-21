@@ -55,7 +55,7 @@ class GlassDetection(object):
 
         # 2. Close cylinder contour of the glass
         # Note: Based on the mean of each edge-side...
-        (mean_right, mean_left, n_mean) = (0, 0, 0)
+        (mean_right, mean_left, n_mean_left, n_mean_right) = (0, 0, 0, 0)
 
         # Iterate all lines
         for yi in range_y:
@@ -67,20 +67,20 @@ class GlassDetection(object):
                 t2 = t[0][-1]
 
                 if int(height * 0.1) < yi < int(height - height * 0.1):
-                    n_mean += 1
-                    mean_left += t1
-                    mean_right += t2
+                    if abs(t2 - self.__ref_contour[2]) < self.__ref_contour[2]*0.05:
+                        n_mean_right += 1
+                        mean_right += t2
+                    if t1 < self.__ref_contour[3]*0.05:
+                        n_mean_left += 1
+                        mean_left += t1
                 self.__stencil_frame[yi][t1:t2] = 255   # Fill all pixels between left and right edge
 
-        mean_right = mean_right / n_mean
-        mean_left = mean_left / n_mean
-
-        print(mean_left)
-        print(mean_right)
+        mean_right = mean_right / n_mean_right
+        mean_left = mean_left / n_mean_left
 
         # 3. Reconstruct cylinder contour for failed contour detection.
         # Note: Mean pixel position used to determine the approximated right place for the edge pixel
-        range_y = range(int(height*0.0), int(height-(height*0.1)), 1)   # Ignore 10 % of the height from top and bottom
+        range_y = range(int(height*0.1), int(height-(height*0.1)), 1)   # Ignore 10 % of the height from top and bottom
         for yi in range_y:
             t = np.where(self.__stencil_frame[yi][0:-1] == 255)
             if len(t) > 0 and len(t[0]) > 0:
