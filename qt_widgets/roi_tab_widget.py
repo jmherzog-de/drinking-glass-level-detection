@@ -1,7 +1,7 @@
 import cv2
 import operator
 from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QGroupBox, QFormLayout, QLineEdit
+from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QGroupBox, QFormLayout, QLineEdit, QLabel, QVBoxLayout
 from .image_widget import ImageWidget
 import numpy as np
 
@@ -15,6 +15,8 @@ class ROITabWidget(QWidget):
         self.__glas_p2 = (0, 0)
         self.__p1 = default_p1
         self.__p2 = default_p2
+        self.glass_type = -1
+        self.fill_level = -1
         self.roi_image = np.zeros(shape=(2048, 2048), dtype='uint8')
         self.setObjectName(u"roi_tab_widget")   # Set default object name
 
@@ -57,6 +59,27 @@ class ROITabWidget(QWidget):
         self.select_button.clicked.connect(self.__select_roi_clicked)
         self.roi_form_layout.addWidget(self.select_button)
 
+        # Info Controls
+        self.info_groupbox = QGroupBox()
+        self.info_groupbox.setObjectName(u"info_groupbox")
+        self.info_groupbox.setTitle(u"Information")
+        self.info_groupbox.setMaximumWidth(220)
+        self.info_groupbox.setMaximumHeight(220)
+
+        self.info_groupbox_layout = QVBoxLayout(self.info_groupbox)
+        self.info_groupbox_layout.setObjectName(u"info_groupbox_layout")
+
+        self.glas_type_label = QLabel()
+        self.glas_type_label.setObjectName(u"glas_type_label")
+        self.glas_type_label.setText(u"Glass: -")
+
+        self.fill_level_label = QLabel()
+        self.fill_level_label.setObjectName(u"fill_level_label")
+        self.fill_level_label.setText(u"Fill Level: - mm")
+
+        self.info_groupbox_layout.addWidget(self.glas_type_label)
+        self.info_groupbox_layout.addWidget(self.fill_level_label)
+
         # ROI Image Widget
         self.roi_image_groupbox = QGroupBox()
         self.roi_image_groupbox.setObjectName(u"roi_image_groupbox")
@@ -68,6 +91,7 @@ class ROITabWidget(QWidget):
         self.roi_image_groupbox_layout.addWidget(self.roi_image_widget)
 
         self.central_layout.addWidget(self.groupbox_controls)
+        self.central_layout.addWidget(self.info_groupbox)
         self.central_layout.addWidget(self.roi_image_groupbox)
 
     @Slot()
@@ -91,6 +115,11 @@ class ROITabWidget(QWidget):
         self.__glas_p2 = tuple(map(operator.add, self.__p1, p2))
 
     def update_image(self, frame: np.ndarray):
+
+        if self.glass_type == 0:
+            self.glas_type_label.setText(u"Glass: Small")
+        elif self.glass_type == 1:
+            self.glas_type_label.setText(u"Glass: Large")
 
         self.roi_image = frame[self.__p1[1]:self.__p2[1], self.__p1[0]:self.__p2[0]].copy()
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
