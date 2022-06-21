@@ -14,6 +14,7 @@ class GlassDetection(object):
         self.__mask_frame: np.ndarray = None
         self.__stencil_contours_frame = None
         self.__glas_frame: np.ndarray = None
+        self.__detected_glass_type: int = -1    # 0: small glass 1: big glass -1: no glass
 
         # public variables
         self.abs_pixel_tolerance: int = 10
@@ -22,6 +23,8 @@ class GlassDetection(object):
         self.mask_offset_bottom: float = 0.1
         self.mask_offset_left: float = 0.0
         self.mask_offset_right: float = 0.0
+        self.large_glass_size: (int, int) = (480, 1280)
+        self.small_glass_size: (int, int) = (480, 1040)
 
     def create_stencil(self, frame: np.ndarray):
 
@@ -30,8 +33,6 @@ class GlassDetection(object):
 
         # Create a mask with all black pixels
         self.__stencil_frame = np.full(shape=(height, width), fill_value=0, dtype='uint8')
-
-        # range_y = range(int(height*0.1), int(height-(height*0.1)), 1)
 
         # Get contours of within the glas BoundingBox
         range_y = range(height)
@@ -42,6 +43,9 @@ class GlassDetection(object):
             if area > 450:
                 cv2.drawContours(self.__stencil_contours_frame, cnt, -1, (255, 255, 255), 1)
                 self.__stencil_frame = cv2.fillPoly(self.__stencil_frame, pts=[cnt], color=(255, 255, 255))
+
+        # cv2.imshow("STENCIL_CONTOUR", self.__stencil_contours_frame)
+        # cv2.waitKey(1)
 
         # Repair broken edge detection of the glass.
         # Note: This appears mainly at the above part of the glass.
@@ -71,9 +75,12 @@ class GlassDetection(object):
         mean_right = mean_right / n_mean
         mean_left = mean_left / n_mean
 
+        print(mean_left)
+        print(mean_right)
+
         # 3. Reconstruct cylinder contour for failed contour detection.
         # Note: Mean pixel position used to determine the approximated right place for the edge pixel
-        range_y = range(int(height*0.1), int(height-(height*0.1)), 1)   # Ignore 10 % of the height from top and bottom
+        range_y = range(int(height*0.0), int(height-(height*0.1)), 1)   # Ignore 10 % of the height from top and bottom
         for yi in range_y:
             t = np.where(self.__stencil_frame[yi][0:-1] == 255)
             if len(t) > 0 and len(t[0]) > 0:
@@ -91,8 +98,17 @@ class GlassDetection(object):
         for yi in range(int(height-height * self.mask_offset_bottom), height):
             self.__mask_frame[yi] = 0
 
-        cv2.imshow("IMAGE", self.__mask_frame)
-        cv2.waitKey(1)
+        self.__stencil_frame = cv2.cvtColor(self.__stencil_frame, cv2.COLOR_GRAY2RGB)
+        for yi in range_y:
+            cv2.circle(self.__stencil_frame, (int(mean_right), yi), 0, (255, 0, 0), -1)
+            cv2.circle(self.__stencil_frame, (int(mean_left), yi), 0, (255, 0, 0), -1)
+
+        for xi in range(width):
+            cv2.circle(self.__stencil_frame, (xi, int(height*0.1)), 0, (0, 255, 255), -1)
+            cv2.circle(self.__stencil_frame, (xi, int(height-height * 0.1)), 0, (0, 255, 255), -1)
+
+        # cv2.imshow("IMAGE", self.__mask_frame)
+        # cv2.waitKey(1)
 
         return
 
@@ -137,14 +153,33 @@ class GlassDetection(object):
             self.__cycle_counter += 1
 
         if self.__cycle_counter >= self.detection_cycles:
-            self.__detected = True
-            self.__glas_frame = orig_frame[
-                                self.__ref_contour[1]:self.__ref_contour[1] + self.__ref_contour[3],
-                                self.__ref_contour[0]:self.__ref_contour[0] + self.__ref_contour[2]]
 
-            self.create_stencil(frame[
-                                self.__ref_contour[1]:self.__ref_contour[1] + self.__ref_contour[3],
-                                self.__ref_contour[0]:self.__ref_contour[0] + self.__ref_contour[2]])
+            # Check if the determined contour could be the small or large glass
+            estimated_height = self.__ref_contour[3]
+            estimated_width = self.__ref_contour[2]
+            estimated_size = (estimated_width, estimated_height)
+
+            pos_offset = tuple(map(lambda i, j: abs(i-j), estimated_size, self.small_glass_size))
+            pos_offset = tuple(map(lambda i, j: i <= 0.1*j, pos_offset, self.small_glass_size))
+            if pos_offset == (True, True):
+                self.__detected_glass_type = 0
+
+            pos_offset = tuple(map(lambda i, j: abs(i-j), estimated_size, self.large_glass_size))
+            pos_offset = tuple(map(lambda i, j: i <= 0.1*j, pos_offset, self.large_glass_size))
+            if pos_offset == (True, True):
+                self.__detected_glass_type = 1
+
+            if self.__detected_glass_type == -1:
+                self.__cycle_counter = 0
+            else:
+                self.__detected = True
+                self.__glas_frame = orig_frame[
+                                    self.__ref_contour[1]:self.__ref_contour[1] + self.__ref_contour[3],
+                                    self.__ref_contour[0]:self.__ref_contour[0] + self.__ref_contour[2]]
+
+                self.create_stencil(frame[
+                                    self.__ref_contour[1]:self.__ref_contour[1] + self.__ref_contour[3],
+                                    self.__ref_contour[0]:self.__ref_contour[0] + self.__ref_contour[2]])
 
         return frame.copy()
 
@@ -159,6 +194,9 @@ class GlassDetection(object):
 
     def get_glas_frame(self):
         return self.__glas_frame
+
+    def get_detected_glass_type(self):
+        return self.__detected_glass_type
 
     def estimated_glas(self):
         if self.__cycle_counter == (0, 0, 0, 0):
