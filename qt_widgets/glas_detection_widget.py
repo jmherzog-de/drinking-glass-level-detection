@@ -11,7 +11,7 @@ class GlasDetectionTabWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.glas_detector = bv.GlasDetection()
+        self.glas_detector = bv.GlassDetection()
 
         self.glas_detected: bool = False
         self.detected_glas_frames = []

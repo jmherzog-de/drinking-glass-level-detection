@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-class GlasDetection(object):
+class GlassDetection(object):
 
     def __init__(self):
 
@@ -43,13 +43,13 @@ class GlasDetection(object):
                 cv2.drawContours(self.__stencil_contours_frame, cnt, -1, (255, 255, 255), 1)
                 self.__stencil_frame = cv2.fillPoly(self.__stencil_frame, pts=[cnt], color=(255, 255, 255))
 
-        # Repair broken edge detection of the glas.
-        # Note: This appears mainly at the above part of the glas.
+        # Repair broken edge detection of the glass.
+        # Note: This appears mainly at the above part of the glass.
 
         # 1. Close holes with morphological filters
         self.__stencil_frame = cv2.dilate(self.__stencil_frame, np.ones((31, 31), np.uint8), 1)
 
-        # 2. Close cylinder contour of the glas
+        # 2. Close cylinder contour of the glass
         # Note: Based on the mean of each edge-side...
         (mean_right, mean_left, n_mean) = (0, 0, 0)
 
@@ -175,15 +175,15 @@ class GlasDetection(object):
 class LevelDetector(object):
 
     def __init__(self):
-        self.__glas_mask: np.ndarray = None
+        self.__glass_mask: np.ndarray = None
         self.__current_level_pixel: int = 0
 
     def detect(self, frame: np.ndarray):
 
-        if self.__glas_mask is None:
+        if self.__glass_mask is None:
             return frame
 
-        frame = cv2.bitwise_and(self.__glas_mask, frame)
+        frame = cv2.bitwise_and(self.__glass_mask, frame)
 
         kernel = np.ones((7, 7), np.uint8)
         frame = cv2.erode(frame, kernel, 1)
@@ -208,8 +208,8 @@ class LevelDetector(object):
 
         return frame
 
-    def set_glas_mask(self, mask: np.ndarray):
-        self.__glas_mask = mask.copy()
+    def set_glass_mask(self, mask: np.ndarray):
+        self.__glass_mask = mask.copy()
 
 
 class DifferenceImageBuilder(object):
