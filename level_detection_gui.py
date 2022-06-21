@@ -2,7 +2,8 @@ import sys
 import cv2
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, QWidget, QVBoxLayout, QTabWidget, QHBoxLayout)
-from qt_widgets import NavigationWidget, RefImageTabWidget, ROITabWidget, LevelDetectionTabWidget, GlasDetectionTabWidget
+from qt_widgets import (NavigationWidget, RefImageTabWidget, ROITabWidget, LevelDetectionTabWidget,
+                        GlasDetectionTabWidget)
 from cv_videoplayer import VideoPlayer
 from pco_capture import QtVideoCapture
 from bv_algorithms import AutoscaleImage
@@ -25,7 +26,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.frame_counter = 0
-        self.mode = "VIDEO"   # 'CAMERA' | 'VIDEO'
+        self.mode = "VIDEO"  # 'CAMERA' | 'VIDEO'
         self.orig_image = np.zeros(shape=(2048, 2048), dtype='uint8')
 
         self.bv_scale = AutoscaleImage()
@@ -125,7 +126,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def roi_selected_callback(self):
-        pass    # TODO: Implement update frame on paused or ended video
+        pass  # TODO: Implement update frame on paused or ended video
 
     @Slot()
     def open_camera_stream_clicked(self):
@@ -174,13 +175,14 @@ class MainWindow(QMainWindow):
     def update_frame(self, frame: np.ndarray):
         # Preprocess image before update on GUI
         if self.mode == "VIDEO":
-            self.orig_image = frame    # Input image is a 8 bit image
+            self.orig_image = frame  # Input image is a 8 bit image
         else:
-            image = self.bv_scale.autoscale(frame)    # Input image is a 16 bit image
+            image = self.bv_scale.autoscale(frame)  # Input image is a 16 bit image
             self.orig_image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
-        # Display detected glas region
+        # Display detected glass region
         if self.glas_detection_tab_widget.glas_detector.state():
+            self.roi_widget.glass_type = self.glas_detection_tab_widget.glas_detector.get_detected_glass_type()
             glas_stencil = self.glas_detection_tab_widget.glas_detector.get_glas_mask()
             self.level_detection_tab_widget.level_detector.set_glass_mask(glas_stencil)
             x1, y1, x2, y2 = self.glas_detection_tab_widget.glas_detector.estimated_glas()
