@@ -51,7 +51,8 @@ class RefImageTabWidget(QWidget):
         self.distance_slider = QSlider(Qt.Horizontal)
         self.distance_slider.setObjectName(u"distance_slider")
         self.distance_slider.setMinimum(10)
-        self.distance_slider.setMaximum(100)
+        self.distance_slider.setMaximum(200)
+        self.distance_slider.setValue(100)
         self.distance_slider.valueChanged.connect(self.__slider_value_changed)
         self.groupbox_difference_image_layout.addWidget(self.distance_slider)
 
