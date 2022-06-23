@@ -100,12 +100,12 @@ class GlassDetection(object):
 
         self.__stencil_frame = cv2.cvtColor(self.__stencil_frame, cv2.COLOR_GRAY2RGB)
         for yi in range_y:
-            cv2.circle(self.__stencil_frame, (int(mean_right), yi), 0, (255, 0, 0), -1)
-            cv2.circle(self.__stencil_frame, (int(mean_left), yi), 0, (255, 0, 0), -1)
+            cv2.circle(self.__stencil_frame, (int(mean_right), yi), 0, (255, 0, 0), 2)
+            cv2.circle(self.__stencil_frame, (int(mean_left), yi), 0, (255, 0, 0), 2)
 
         for xi in range(width):
-            cv2.circle(self.__stencil_frame, (xi, int(height*0.1)), 0, (0, 255, 255), -1)
-            cv2.circle(self.__stencil_frame, (xi, int(height-height * 0.1)), 0, (0, 255, 255), -1)
+            cv2.circle(self.__stencil_frame, (xi, int(height*0.1)), 0, (0, 255, 255), 2)
+            cv2.circle(self.__stencil_frame, (xi, int(height-height * 0.1)), 0, (0, 255, 255), 2)
 
         # cv2.imshow("IMAGE", self.__mask_frame)
         # cv2.waitKey(1)
