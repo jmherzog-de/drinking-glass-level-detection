@@ -1,12 +1,19 @@
 import cv2
+import sys
 import numpy as np
 
 
 class GlassDetection(object):
 
     def __init__(self):
+        """
+        Class constructor method for GlassDetection.
+        :param debug: enable or disable debugging features.
+        """
 
-        # private variables
+        # Detect if application runs in debug mode or not
+        # Note: Additional informations will be displayed in Debug mode.
+        self.__debug_mode = (gettrace := getattr(sys, 'gettrace')) and gettrace()
         self.__detected: bool = False
         self.__ref_contour: tuple = (0, 0, 0, 0)
         self.__cycle_counter: int = 0
@@ -44,8 +51,9 @@ class GlassDetection(object):
                 cv2.drawContours(self.__stencil_contours_frame, cnt, -1, (255, 255, 255), 1)
                 self.__stencil_frame = cv2.fillPoly(self.__stencil_frame, pts=[cnt], color=(255, 255, 255))
 
-        # cv2.imshow("STENCIL_CONTOUR", self.__stencil_contours_frame)
-        # cv2.waitKey(1)
+        if self.__debug_mode:
+            cv2.imshow("STENCIL_CONTOUR", self.__stencil_contours_frame)
+            cv2.waitKey(1)
 
         # Repair broken edge detection of the glass.
         # Note: This appears mainly at the above part of the glass.
@@ -107,8 +115,9 @@ class GlassDetection(object):
             cv2.circle(self.__stencil_frame, (xi, int(height*0.1)), 0, (0, 255, 255), 2)
             cv2.circle(self.__stencil_frame, (xi, int(height-height * 0.1)), 0, (0, 255, 255), 2)
 
-        # cv2.imshow("IMAGE", self.__mask_frame)
-        # cv2.waitKey(1)
+        if self.__debug_mode:
+            cv2.imshow("IMAGE", self.__mask_frame)
+            cv2.waitKey(1)
 
         return
 
@@ -213,13 +222,26 @@ class GlassDetection(object):
 class LevelDetector(object):
 
     def __init__(self):
+
+        self.__debug_mode = (gettrace := getattr(sys, 'gettrace')) and gettrace()
         self.__glass_mask: np.ndarray = None
         self.__current_level_pixel: int = 0
+        self.__detection_lines = []
 
     def detect(self, frame: np.ndarray):
 
         if self.__glass_mask is None:
             return frame
+
+        if len(self.__detection_lines) == 0:
+            (height, width) = frame.shape
+            center_x = width // 2
+            detection_line_center = (center_x, 0, center_x, height)
+            detection_line_right = (width -int(0.2*width), 0, width - int(0.2*width), height)
+            detection_line_left = (int(0.2*width), 0, int(0.2*width), height)
+            self.__detection_lines.append(detection_line_center)
+            self.__detection_lines.append(detection_line_right)
+            self.__detection_lines.append(detection_line_left)
 
         frame = cv2.bitwise_and(self.__glass_mask, frame)
 
@@ -228,10 +250,11 @@ class LevelDetector(object):
         kernel = np.ones((13, 13), np.uint8)
         frame = cv2.dilate(frame, kernel, 1)
 
-        cv2.imshow("LEVEL_DETECTOR", frame)
-        cv2.waitKey(1)
+        if self.__debug_mode:
+            cv2.imshow("LEVEL_DETECTOR", frame)
+            cv2.waitKey(1)
 
-        grad_y = cv2.Sobel(frame, cv2.CV_16S, 0, 1, ksize=3, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT)
+        grad_y = cv2.Sobel(frame, cv2.CV_16S, 0, 1, ksize=7, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT)
         abs_grad_y = cv2.convertScaleAbs(grad_y)
         _, frame = cv2.threshold(abs_grad_y, 30, 255, cv2.THRESH_BINARY)
 
@@ -244,6 +267,9 @@ class LevelDetector(object):
             if cnt_area > 450 and 1.5 * w > h:
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 3)
 
+        # Draw detection lines
+        for detection_line in self.__detection_lines:
+            cv2.line(frame, pt1=(detection_line[0], detection_line[1]), pt2=(detection_line[2], detection_line[3]), color=(0, 255, 0), thickness=2)
         return frame
 
     def set_glass_mask(self, mask: np.ndarray):
@@ -253,6 +279,7 @@ class LevelDetector(object):
 class DifferenceImageBuilder(object):
 
     def __init__(self):
+        self.__debug_mode = (gettrace := getattr(sys, 'gettrace')) and gettrace()
         self.__ref_image = None
         self.__diff_image = None
 
