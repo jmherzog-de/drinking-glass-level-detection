@@ -183,8 +183,8 @@ class MainWindow(QMainWindow):
         # Display detected glass region
         if self.glas_detection_tab_widget.glas_detector.state():
             self.roi_widget.glass_type = self.glas_detection_tab_widget.glas_detector.get_detected_glass_type()
-            glas_stencil = self.glas_detection_tab_widget.glas_detector.get_glas_mask()
-            self.level_detection_tab_widget.level_detector.set_glass_mask(glas_stencil)
+            glass_mask = self.glas_detection_tab_widget.glas_detector.get_glas_mask()
+            self.level_detection_tab_widget.level_detector.set_glass_mask(glass_mask)
             x1, y1, x2, y2 = self.glas_detection_tab_widget.glas_detector.estimated_glas()
             self.roi_widget.update_glas_rect((x1, y1), (x2, y2))
 
