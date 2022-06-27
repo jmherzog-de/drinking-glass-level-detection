@@ -233,15 +233,17 @@ class LevelDetector(object):
         if self.__glass_mask is None:
             return frame
 
+        (height, width) = frame.shape
         if len(self.__detection_lines) == 0:
-            (height, width) = frame.shape
-            center_x = width // 2
-            detection_line_center = (center_x, 0, center_x, height)
-            detection_line_right = (width -int(0.2*width), 0, width - int(0.2*width), height)
-            detection_line_left = (int(0.2*width), 0, int(0.2*width), height)
-            self.__detection_lines.append(detection_line_center)
-            self.__detection_lines.append(detection_line_right)
-            self.__detection_lines.append(detection_line_left)
+            self.__detection_lines.append((int(0.1*width), 0, int(0.1*width), height))
+            self.__detection_lines.append((int(0.2 * width), 0, int(0.2 * width), height))
+            self.__detection_lines.append((int(0.3 * width), 0, int(0.3 * width), height))
+            self.__detection_lines.append((int(0.4 * width), 0, int(0.4 * width), height))
+            self.__detection_lines.append((int(0.5 * width), 0, int(0.5 * width), height))
+            self.__detection_lines.append((int(0.6 * width), 0, int(0.6 * width), height))
+            self.__detection_lines.append((int(0.7 * width), 0, int(0.7 * width), height))
+            self.__detection_lines.append((int(0.8 * width), 0, int(0.8 * width), height))
+            self.__detection_lines.append((int(0.9 * width), 0, int(0.9 * width), height))
 
         frame = cv2.bitwise_and(self.__glass_mask, frame)
 
@@ -254,18 +256,53 @@ class LevelDetector(object):
             cv2.imshow("LEVEL_DETECTOR", frame)
             cv2.waitKey(1)
 
-        grad_y = cv2.Sobel(frame, cv2.CV_16S, 0, 1, ksize=7, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT)
+        grad_y = cv2.Sobel(frame, cv2.CV_16S, 0, 1, ksize=5, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT)
         abs_grad_y = cv2.convertScaleAbs(grad_y)
         _, frame = cv2.threshold(abs_grad_y, 30, 255, cv2.THRESH_BINARY)
+        frame = cv2.dilate(frame, kernel, 1)
 
-        contours, hierarchy = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # contours, hierarchy = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+
+        # Detect first pixels on detection line from top to bottom
+        detected_heights = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        # Find first and second detection line
+        for yi in range(height):
+            if frame[yi][int(0.1*width)] == 255 and detected_heights[0] == 0:
+                detected_heights[0] = yi
+            if frame[yi][int(0.2*width)] == 255 and detected_heights[1] == 0:
+                detected_heights[1] = yi
+            if frame[yi][int(0.3*width)] == 255 and detected_heights[2] == 0:
+                detected_heights[2] = yi
+            if frame[yi][int(0.4*width)] == 255 and detected_heights[3] == 0:
+                detected_heights[3] = yi
+            if frame[yi][int(0.5*width)] == 255 and detected_heights[4] == 0:
+                detected_heights[4] = yi
+            if frame[yi][int(0.6*width)] == 255 and detected_heights[5] == 0:
+                detected_heights[5] = yi
+            if frame[yi][int(0.7*width)] == 255 and detected_heights[6] == 0:
+                detected_heights[6] = yi
+            if frame[yi][int(0.8*width)] == 255 and detected_heights[7] == 0:
+                detected_heights[7] = yi
+            if frame[yi][int(0.9*width)] == 255 and detected_heights[8] == 0:
+                detected_heights[8] = yi
+
+        print(f"Estimated height: {sum(detected_heights) / len(detected_heights)} Pixel.")
+
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
 
+        # Draw estimated fill-level line
+        self.__current_level_pixel = int(sum(detected_heights) / len(detected_heights))
+        cv2.line(frame, pt1=(0, self.__current_level_pixel), pt2=(width, self.__current_level_pixel), color=(0, 0, 255), thickness=3)
+
+        """
         for cnt in contours:
             cnt_area = cv2.contourArea(cnt)
             x, y, w, h = cv2.boundingRect(cnt)
             if cnt_area > 450 and 1.5 * w > h:
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 3)
+        """
 
         # Draw detection lines
         for detection_line in self.__detection_lines:
@@ -274,6 +311,9 @@ class LevelDetector(object):
 
     def set_glass_mask(self, mask: np.ndarray):
         self.__glass_mask = mask.copy()
+
+    def get_current_level(self):
+        return self.__current_level_pixel
 
 
 class DifferenceImageBuilder(object):
