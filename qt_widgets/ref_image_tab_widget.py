@@ -78,6 +78,12 @@ class RefImageTabWidget(QWidget):
         self.reference_image.update_image(self.active_frame.copy())
         self.__diff_image_set = True
 
+    def ref_image_state(self):
+        return self.__diff_image_set
+
+    def set_ref_image(self):
+        self.__save_ref_image()
+
     def update_image(self, frame: np.ndarray):
         self.active_frame = frame.copy()
         self.live_image.update_image(frame)

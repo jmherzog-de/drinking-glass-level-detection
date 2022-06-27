@@ -17,6 +17,7 @@ class ROITabWidget(QWidget):
         self.__p2 = default_p2
         self.glass_type = -1
         self.fill_level = -1
+        self.fill_level_pixel = 0
         self.roi_image = np.zeros(shape=(2048, 2048), dtype='uint8')
         self.setObjectName(u"roi_tab_widget")   # Set default object name
 
@@ -116,17 +117,41 @@ class ROITabWidget(QWidget):
 
     def update_image(self, frame: np.ndarray):
 
+        # ---------------------------- #
+        # Update GUI elements
+        # ---------------------------- #
         if self.glass_type == 0:
             self.glas_type_label.setText(u"Glass: Small")
         elif self.glass_type == 1:
             self.glas_type_label.setText(u"Glass: Large")
 
+        self.fill_level_label.setText("Level: " + str(self.fill_level_pixel) + " Pixel")
+
+        # ---------------------------- #
+        # Get ROI Image
+        # ---------------------------- #
         self.roi_image = frame[self.__p1[1]:self.__p2[1], self.__p1[0]:self.__p2[0]].copy()
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
 
-        if not self.__glas_p2 == (0, 0):
+        # ---------------------------- #
+        # Draw BoundingBox around ROI
+        # ---------------------------- #
+        frame = cv2.rectangle(frame, self.__p1, self.__p2, color=(255, 0, 0), thickness=3)
+
+        # ----------------------------------------------------- #
+        # This point indicates if the glass is estimated or not
+        # ----------------------------------------------------- #
+        if self.__p2 != (0, 0):
+
+            # Draw BoundingBox around estimated glass region.
             frame = cv2.rectangle(frame, self.__glas_p1, self.__glas_p2, color=(0, 255, 0), thickness=2)
 
-        frame = cv2.rectangle(frame, self.__p1, self.__p2, color=(255, 0, 0), thickness=3)
+            # Draw the fill-level line
+            glass_height = self.__glas_p2[0] - self.__glas_p2[0]
+            y_level = self.fill_level_pixel + int(glass_height*0.1)
+            print(y_level)
+            level_p1 = (self.__glas_p1[0], self.__glas_p1[1] + y_level)
+            level_p2 = (self.__glas_p2[0], self.__glas_p1[1] + y_level)
+            frame = cv2.line(frame, pt1=level_p1, pt2=level_p2, color=(255, 255, 0), thickness=3)
 
         self.roi_image_widget.update_image(frame)
