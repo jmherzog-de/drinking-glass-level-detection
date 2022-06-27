@@ -3,7 +3,7 @@ import cv2
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow, QWidget, QVBoxLayout, QTabWidget, QHBoxLayout)
 from qt_widgets import (NavigationWidget, RefImageTabWidget, ROITabWidget, LevelDetectionTabWidget,
-                        GlasDetectionTabWidget)
+                        GlassDetectionTabWidget)
 from cv_videoplayer import VideoPlayer
 from pco_capture import QtVideoCapture
 from bv_algorithms import AutoscaleImage
@@ -82,16 +82,16 @@ class MainWindow(QMainWindow):
         self.roi_tab_page_layout.addWidget(self.roi_widget)
 
         #
-        # MainTab: Glas Detection
+        # MainTab: Glass Detection
         #
-        self.glas_detection_tab_page = QWidget()
-        self.glas_detection_tab_page.setObjectName(u"glas_detection_tab_page")
-        self.glas_detection_tab_page_layout = QHBoxLayout(self.glas_detection_tab_page)
-        self.glas_detection_tab_page_layout.setObjectName(u"glas_detection_tab_page_layout")
+        self.glass_detection_tab_page = QWidget()
+        self.glass_detection_tab_page.setObjectName(u"glass_detection_tab_page")
+        self.glas_detection_tab_page_layout = QHBoxLayout(self.glass_detection_tab_page)
+        self.glas_detection_tab_page_layout.setObjectName(u"glass_detection_tab_page_layout")
 
-        self.glas_detection_tab_widget = GlasDetectionTabWidget()
-        self.glas_detection_tab_widget.setObjectName(u"glas_detection_tab_widget")
-        self.glas_detection_tab_page_layout.addWidget(self.glas_detection_tab_widget)
+        self.glass_detection_tab_widget = GlassDetectionTabWidget()
+        self.glass_detection_tab_widget.setObjectName(u"glass_detection_tab_widget")
+        self.glas_detection_tab_page_layout.addWidget(self.glass_detection_tab_widget)
 
         #
         # MainTab: Apply Reference Image
@@ -118,15 +118,20 @@ class MainWindow(QMainWindow):
         self.filling_tab_page_layout.addWidget(self.level_detection_tab_widget)
 
         self.main_tab.addTab(self.roi_tab_page, "1. Select ROI")
-        self.main_tab.addTab(self.glas_detection_tab_page, "2. Glas Detection")
+        self.main_tab.addTab(self.glass_detection_tab_page, "2. Glass Detection")
         self.main_tab.addTab(self.refimg_tab_page, "3. Apply Reference Image")
         self.main_tab.addTab(self.filling_tab_page, "4. Level Detection")
 
         self.setCentralWidget(self.central_widget)
 
     @Slot()
-    def roi_selected_callback(self):
-        pass  # TODO: Implement update frame on paused or ended video
+    def roi_selected_callback(self) -> None:
+        """
+        Callback method for ROI selected from user GUI.
+        Note: This method is currently not needed.
+        :return: None
+        """
+        pass
 
     @Slot()
     def open_camera_stream_clicked(self):
@@ -185,32 +190,34 @@ class MainWindow(QMainWindow):
         # Update widgets with new frame from video file or camera.
         #
         self.roi_widget.update_image(self.orig_image)
-        self.glas_detection_tab_widget.update_image(self.roi_widget.roi_image)
+        self.glass_detection_tab_widget.update_image(self.roi_widget.roi_image)
 
         #
         # Start level detection after glass detection is done
         #
-        if self.glas_detection_tab_widget.glas_detector.state():
+        if self.glass_detection_tab_widget.glass_detector.state():
 
             # 1. Set reference image first frame after glass detected
             if not self.refimg_tab_widget.ref_image_state():
-                f = self.glas_detection_tab_widget.glas_detector.get_glas_frame()
+
+                # Change top offset for glass mask when small glass is detected
+                f = self.glass_detection_tab_widget.glass_detector.get_glass_frame()
                 self.refimg_tab_widget.update_image(f.copy())
                 self.refimg_tab_widget.set_ref_image()
 
             # 2. Get estimated glass type from glass detector widget
-            self.roi_widget.glass_type = self.glas_detection_tab_widget.glas_detector.get_detected_glass_type()
+            self.roi_widget.glass_type = self.glass_detection_tab_widget.glass_detector.get_detected_glass_type()
 
             # 3. Get glass mask from glass detector widget for level detection
-            glass_mask = self.glas_detection_tab_widget.glas_detector.get_glas_mask()
+            glass_mask = self.glass_detection_tab_widget.glass_detector.get_glass_mask()
             self.level_detection_tab_widget.level_detector.set_glass_mask(glass_mask)
 
             # 4. Draw BoundingBox around estimated glass.
-            x1, y1, x2, y2 = self.glas_detection_tab_widget.glas_detector.estimated_glas()
-            self.roi_widget.update_glas_rect((x1, y1), (x2, y2))
+            x1, y1, x2, y2 = self.glass_detection_tab_widget.glass_detector.estimated_glass()
+            self.roi_widget.update_glass_rect((x1, y1), (x2, y2))
 
             # 5. Apply Difference Image
-            f = self.glas_detection_tab_widget.glas_detector.get_glas_frame()
+            f = self.glass_detection_tab_widget.glass_detector.get_glass_frame()
             self.refimg_tab_widget.update_image(f.copy())
 
             # 5. Fill-level detection
