@@ -2,10 +2,9 @@ from .histogram_widget import HistogramWidget
 from .image_widget import ImageWidget
 from .camera_controls_widget import CameraControlsWidget
 from .video_controls_widget import VideoControlsWidget
-from .mainmenu_widget import MainMenuWidget
 from .navigation_widget import NavigationWidget
 from .ref_image_controls import ReferenceImageControlsWidget
 from .roi_tab_widget import ROITabWidget
 from .ref_image_tab_widget import RefImageTabWidget
 from .level_detection_tab_widget import LevelDetectionTabWidget
-from .glas_detection_widget import GlasDetectionTabWidget
+from .glas_detection_widget import GlassDetectionTabWidget
