@@ -4,6 +4,9 @@ import numpy as np
 
 
 class GlassDetection(object):
+    """
+    Class bundle features for a simple glass detection.
+    """
 
     def __init__(self):
         """
@@ -20,7 +23,7 @@ class GlassDetection(object):
         self.__stencil_frame: np.ndarray = None
         self.__mask_frame: np.ndarray = None
         self.__stencil_contours_frame = None
-        self.__glas_frame: np.ndarray = None
+        self.__glass_frame: np.ndarray = None
         self.__detected_glass_type: int = -1    # 0: small glass 1: big glass -1: no glass
 
         # public variables
@@ -35,13 +38,17 @@ class GlassDetection(object):
 
     def create_stencil(self, frame: np.ndarray):
 
-        # Extract height and width of the detected glas BoundingBox
+        # Modify mask offset for small glass.
+        if self.__detected_glass_type == 0:
+            self.mask_offset_top = 0.2
+
+        # Extract height and width of the detected glass BoundingBox
         (height, width) = self.__ref_contour[3], self.__ref_contour[2]
 
         # Create a mask with all black pixels
         self.__stencil_frame = np.full(shape=(height, width), fill_value=0, dtype='uint8')
 
-        # Get contours of within the glas BoundingBox
+        # Get contours of within the glass BoundingBox
         range_y = range(height)
         self.__stencil_contours_frame = np.zeros(frame.shape)
         contours, hierarchy = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -67,14 +74,14 @@ class GlassDetection(object):
 
         # Iterate all lines
         for yi in range_y:
-            t = np.where(self.__stencil_frame[yi][0:-1] == 255)     # Extract all pixels of the glas
+            t = np.where(self.__stencil_frame[yi][0:-1] == 255)     # Extract all pixels of the glass
 
             if len(t) > 0 and len(t[0]) > 0:
                 # Extract left first edge and right first edge
                 t1 = t[0][0]
                 t2 = t[0][-1]
 
-                if int(height * 0.1) < yi < int(height - height * 0.1):
+                if int(height * self.mask_offset_top) < yi < int(height - height * self.mask_offset_bottom):
                     if abs(t2 - self.__ref_contour[2]) < self.__ref_contour[2]*0.05:
                         n_mean_right += 1
                         mean_right += t2
@@ -138,7 +145,7 @@ class GlassDetection(object):
         _, frame = cv2.threshold(weighted, 40, 255, cv2.THRESH_BINARY)
 
         if self.__detected:
-            self.__glas_frame = orig_frame[
+            self.__glass_frame = orig_frame[
                                 self.__ref_contour[1]:self.__ref_contour[1] + self.__ref_contour[3],
                                 self.__ref_contour[0]:self.__ref_contour[0] + self.__ref_contour[2]]
             return frame.copy()
@@ -182,7 +189,7 @@ class GlassDetection(object):
                 self.__cycle_counter = 0
             else:
                 self.__detected = True
-                self.__glas_frame = orig_frame[
+                self.__glass_frame = orig_frame[
                                     self.__ref_contour[1]:self.__ref_contour[1] + self.__ref_contour[3],
                                     self.__ref_contour[0]:self.__ref_contour[0] + self.__ref_contour[2]]
 
@@ -195,19 +202,19 @@ class GlassDetection(object):
     def state(self):
         return self.__detected
 
-    def get_glas_stencil(self):
+    def get_glass_stencil(self):
         return self.__stencil_frame
 
-    def get_glas_mask(self):
+    def get_glass_mask(self):
         return self.__mask_frame
 
-    def get_glas_frame(self):
-        return self.__glas_frame
+    def get_glass_frame(self):
+        return self.__glass_frame
 
     def get_detected_glass_type(self):
         return self.__detected_glass_type
 
-    def estimated_glas(self):
+    def estimated_glass(self):
         if self.__cycle_counter == (0, 0, 0, 0):
             return None, None, None, None
         else:
@@ -248,7 +255,7 @@ class LevelDetector(object):
         frame = cv2.bitwise_and(self.__glass_mask, frame)
 
         kernel = np.ones((7, 7), np.uint8)
-        frame = cv2.erode(frame, kernel, 1)
+        frame = cv2.erode(frame, kernel, 2)
         kernel = np.ones((13, 13), np.uint8)
         frame = cv2.dilate(frame, kernel, 1)
 
@@ -260,9 +267,6 @@ class LevelDetector(object):
         abs_grad_y = cv2.convertScaleAbs(grad_y)
         _, frame = cv2.threshold(abs_grad_y, 30, 255, cv2.THRESH_BINARY)
         frame = cv2.dilate(frame, kernel, 1)
-
-        # contours, hierarchy = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        # frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
 
         # Detect first pixels on detection line from top to bottom
         detected_heights = [0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -288,25 +292,16 @@ class LevelDetector(object):
             if frame[yi][int(0.9*width)] == 255 and detected_heights[8] == 0:
                 detected_heights[8] = yi
 
-        print(f"Estimated height: {sum(detected_heights) / len(detected_heights)} Pixel.")
-
         frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
 
         # Draw estimated fill-level line
         self.__current_level_pixel = int(sum(detected_heights) / len(detected_heights))
         cv2.line(frame, pt1=(0, self.__current_level_pixel), pt2=(width, self.__current_level_pixel), color=(0, 0, 255), thickness=3)
 
-        """
-        for cnt in contours:
-            cnt_area = cv2.contourArea(cnt)
-            x, y, w, h = cv2.boundingRect(cnt)
-            if cnt_area > 450 and 1.5 * w > h:
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 3)
-        """
-
         # Draw detection lines
         for detection_line in self.__detection_lines:
             cv2.line(frame, pt1=(detection_line[0], detection_line[1]), pt2=(detection_line[2], detection_line[3]), color=(0, 255, 0), thickness=2)
+
         return frame
 
     def set_glass_mask(self, mask: np.ndarray):
