@@ -3,6 +3,9 @@ import platform
 import numpy as np
 import os
 
+# ------------------------------------------------------------ #
+# Autodetect OS platform
+# ------------------------------------------------------------ #
 if platform.system() == 'Windows':
     lib = ctypes.CDLL(os.path.dirname(os.path.realpath(__file__)) + "\\bv_algorithms_cpp.dll")
 elif platform.system() == 'Darwin':
@@ -10,6 +13,9 @@ elif platform.system() == 'Darwin':
 else:
     raise Exception(f"No implementations for this System: {platform.system()}")
 
+# ------------------------------------------------------------ #
+# Generate local Python bindings to the C++ autoscale library.
+# ------------------------------------------------------------ #
 c_int_array = np.ctypeslib.ndpointer(dtype=np.uint16, ndim=2, flags=['C_CONTIGUOUS', 'WRITEABLE'])
 BV_HelperHandle = ctypes.POINTER(ctypes.c_char)
 lib.createInstance.argtypes = []
@@ -23,10 +29,13 @@ class AutoscaleImage(object):
     Binding class to C++ autoscaling methods.
 
     This class contains binding to generate a Look-Up table and create an auto-scaled image.
-    Note: Works with 16-bit image.
+    Note: Works only with 16-bit image.
     """
 
     def __init__(self):
+        """
+        Class constructor create new instance from native C++ library.
+        """
         self.instance = lib.createInstance()
 
     def create_lookup_table(self, t_min: int, t_max: int) -> None:
