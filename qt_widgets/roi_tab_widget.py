@@ -11,8 +11,8 @@ class ROITabWidget(QWidget):
     def __init__(self, roi_update_callback, default_p1: tuple = (0, 0), default_p2: tuple = (2048, 2048)):
         super().__init__()
         self.__roi_update_callback_fct = roi_update_callback
-        self.__glas_p1 = (0, 0)
-        self.__glas_p2 = (0, 0)
+        self.__glass_p1 = (0, 0)
+        self.__glass_p2 = (0, 0)
         self.__p1 = default_p1
         self.__p2 = default_p2
         self.glass_type = -1
@@ -70,15 +70,15 @@ class ROITabWidget(QWidget):
         self.info_groupbox_layout = QVBoxLayout(self.info_groupbox)
         self.info_groupbox_layout.setObjectName(u"info_groupbox_layout")
 
-        self.glas_type_label = QLabel()
-        self.glas_type_label.setObjectName(u"glas_type_label")
-        self.glas_type_label.setText(u"Glass: -")
+        self.glass_type_label = QLabel()
+        self.glass_type_label.setObjectName(u"glass_type_label")
+        self.glass_type_label.setText(u"Glass: -")
 
         self.fill_level_label = QLabel()
         self.fill_level_label.setObjectName(u"fill_level_label")
         self.fill_level_label.setText(u"Fill Level: - mm")
 
-        self.info_groupbox_layout.addWidget(self.glas_type_label)
+        self.info_groupbox_layout.addWidget(self.glass_type_label)
         self.info_groupbox_layout.addWidget(self.fill_level_label)
 
         # ROI Image Widget
@@ -109,11 +109,11 @@ class ROITabWidget(QWidget):
         self.roi_textbox_x2.setText(str(p2[0]))
         self.roi_textbox_y2.setText(str(p2[1]))
 
-    def update_glas_rect(self, p1: tuple, p2: tuple):
+    def update_glass_rect(self, p1: tuple, p2: tuple):
 
-        # Transform detected glas points into original frame size
-        self.__glas_p1 = tuple(map(operator.add, self.__p1, p1))
-        self.__glas_p2 = tuple(map(operator.add, self.__p1, p2))
+        # Transform detected glass points into original frame size
+        self.__glass_p1 = tuple(map(operator.add, self.__p1, p1))
+        self.__glass_p2 = tuple(map(operator.add, self.__p1, p2))
 
     def update_image(self, frame: np.ndarray):
 
@@ -121,9 +121,9 @@ class ROITabWidget(QWidget):
         # Update GUI elements
         # ---------------------------- #
         if self.glass_type == 0:
-            self.glas_type_label.setText(u"Glass: Small")
+            self.glass_type_label.setText(u"Glass: Small")
         elif self.glass_type == 1:
-            self.glas_type_label.setText(u"Glass: Large")
+            self.glass_type_label.setText(u"Glass: Large")
 
         self.fill_level_label.setText("Level: " + str(self.fill_level_pixel) + " Pixel")
 
@@ -144,14 +144,14 @@ class ROITabWidget(QWidget):
         if self.__p2 != (0, 0):
 
             # Draw BoundingBox around estimated glass region.
-            frame = cv2.rectangle(frame, self.__glas_p1, self.__glas_p2, color=(0, 255, 0), thickness=2)
+            frame = cv2.rectangle(frame, self.__glass_p1, self.__glass_p2, color=(0, 255, 0), thickness=2)
 
             # Draw the fill-level line
-            glass_height = self.__glas_p2[0] - self.__glas_p2[0]
+            glass_height = self.__glass_p2[0] - self.__glass_p2[0]
             y_level = self.fill_level_pixel + int(glass_height*0.1)
-            print(y_level)
-            level_p1 = (self.__glas_p1[0], self.__glas_p1[1] + y_level)
-            level_p2 = (self.__glas_p2[0], self.__glas_p1[1] + y_level)
+
+            level_p1 = (self.__glass_p1[0], self.__glass_p1[1] + y_level)
+            level_p2 = (self.__glass_p2[0], self.__glass_p1[1] + y_level)
             frame = cv2.line(frame, pt1=level_p1, pt2=level_p2, color=(255, 255, 0), thickness=3)
 
         self.roi_image_widget.update_image(frame)
