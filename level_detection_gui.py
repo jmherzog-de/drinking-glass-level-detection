@@ -205,28 +205,32 @@ class MainWindow(QMainWindow):
                 self.refimg_tab_widget.update_image(f.copy())
                 self.refimg_tab_widget.set_ref_image()
 
+                # Get glass mask from glass detector widget for level detection
+                glass_mask = self.glass_detection_tab_widget.glass_detector.get_glass_mask()
+                self.level_detection_tab_widget.level_detector.set_glass_mask(glass_mask)
+
             # 2. Get estimated glass type from glass detector widget
             self.roi_widget.glass_type = self.glass_detection_tab_widget.glass_detector.get_detected_glass_type()
 
-            # 3. Get glass mask from glass detector widget for level detection
-            glass_mask = self.glass_detection_tab_widget.glass_detector.get_glass_mask()
-            self.level_detection_tab_widget.level_detector.set_glass_mask(glass_mask)
-
-            # 4. Draw BoundingBox around estimated glass.
+            # 3. Draw BoundingBox around estimated glass.
             x1, y1, x2, y2 = self.glass_detection_tab_widget.glass_detector.estimated_glass()
             self.roi_widget.update_glass_rect((x1, y1), (x2, y2))
 
-            # 5. Apply Difference Image
-            f = self.glass_detection_tab_widget.glass_detector.get_glass_frame()
-            self.refimg_tab_widget.update_image(f.copy())
+            if self.frame_counter == 4:
+                # 4. Apply Difference Image
+                f = self.glass_detection_tab_widget.glass_detector.get_glass_frame()
+                self.refimg_tab_widget.update_image(f.copy())
 
-            # 5. Fill-level detection
-            self.level_detection_tab_widget.update_image(self.refimg_tab_widget.diff_image)
-            self.roi_widget.fill_level_pixel = self.level_detection_tab_widget.level_detector.get_current_level()
+                # 5. Fill-level detection
+                self.level_detection_tab_widget.update_image(self.refimg_tab_widget.diff_image)
+                self.roi_widget.fill_level_pixel = self.level_detection_tab_widget.level_detector.get_current_level()
+                self.frame_counter = 0
+            else:
+                self.frame_counter += 1
 
 
 if __name__ == '__main__':
     app = QApplication()
     main_window = MainWindow()
-    main_window.show()
+    main_window.showFullScreen()
     sys.exit(app.exec())
