@@ -120,12 +120,21 @@ class ROITabWidget(QWidget):
         # ---------------------------- #
         # Update GUI elements
         # ---------------------------- #
+        fill_level_mm: float = 0.0
         if self.glass_type == 0:
+            glass_height_pixel = self.__glass_p2[1] - self.__glass_p1[1]
+            # glass_height_pixel += int(glass_height_pixel * 0.2)
+            if self.fill_level_pixel > 0.0:
+                fill_level_mm = 118.0 / glass_height_pixel * (glass_height_pixel - self.fill_level_pixel)
             self.glass_type_label.setText(u"Glass: Small")
         elif self.glass_type == 1:
+            glass_height_pixel = self.__glass_p2[1] - self.__glass_p1[1]
+            # glass_height_pixel += int(glass_height_pixel * 0.1)
+            if self.fill_level_pixel > 0.0:
+                fill_level_mm = 145.0 / glass_height_pixel * (glass_height_pixel - self.fill_level_pixel)
             self.glass_type_label.setText(u"Glass: Large")
 
-        self.fill_level_label.setText("Level: " + str(self.fill_level_pixel) + " Pixel")
+        self.fill_level_label.setText("Level: " + str(round(fill_level_mm, 2)) + " mm")
 
         # ---------------------------- #
         # Get ROI Image
