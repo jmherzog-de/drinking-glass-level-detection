@@ -1,4 +1,7 @@
-from PySide6.QtWidgets import QWidget, QGroupBox, QPushButton, QHBoxLayout, QCheckBox
+import sys
+
+from PySide6.QtCore import Slot
+from PySide6.QtWidgets import QWidget, QGroupBox, QPushButton, QHBoxLayout
 
 
 class NavigationWidget(QWidget):
@@ -78,6 +81,14 @@ class NavigationWidget(QWidget):
         self.__stop_video_file_button.clicked.connect(stop_video_callback)
         self.__groupbox_video_file_control_layout.addWidget(self.__stop_video_file_button)
 
+        self.__exit_button = QPushButton(self)
+        self.__exit_button.setObjectName(u"exit_button")
+        self.__exit_button.setMaximumWidth(200)
+        self.__exit_button.setFixedHeight(100)
+        self.__exit_button.setText("EXIT")
+        self.__exit_button.clicked.connect(self.__exit_application)
+        self.__central_layout.addWidget(self.__exit_button)
+
     def enable_video_controls(self):
         self.__groupbox_video_file_control.setEnabled(True)
 
@@ -97,3 +108,7 @@ class NavigationWidget(QWidget):
     def disable_start_stream_control(self):
         self.__stop_stream_button.setEnabled(False)
         self.__start_stream_button.setEnabled(True)
+
+    @Slot()
+    def __exit_application(self):
+        sys.exit()
