@@ -5,10 +5,18 @@ from PySide6.QtCore import QThread, Signal
 
 
 class VideoPlayer(QThread):
+    """
+    Video player with Qt based QThread usage.
+    """
 
+    # Callback signal on new frame available
     update_frame = Signal(np.ndarray)
 
     def __init__(self):
+        """
+        Constructor.
+        """
+
         QThread.__init__(self, parent=None)
         self.play = False
         self.__cap = None
@@ -16,6 +24,10 @@ class VideoPlayer(QThread):
         self.video_file_path = "capture.mp4"
 
     def run(self):
+        """
+        Capture video and save on local disk.
+        :return: None
+        """
         self.__cap = cv2.VideoCapture(self.video_file_path)
         self.play = True
         
