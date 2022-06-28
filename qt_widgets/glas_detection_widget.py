@@ -7,23 +7,21 @@ from .image_widget import ImageWidget
 
 
 class GlassDetectionTabWidget(QWidget):
+    """
+    GUI Widget: Glass detection tab page
+    """
 
     def __init__(self):
         super().__init__()
 
         self.glass_detector = bv.GlassDetection()
 
-        self.glass_detected: bool = False
-        self.detected_glass_frames = []
-        self.cycles_counter: int = 0
-        self.ref_pos = (0, 0, 0, 0)  # x1, y1, x2, y2
-
         self.central_layout = QHBoxLayout(self)
         self.central_layout.setObjectName(u"central_layout")
 
         self.groupbox_glass_extraction = QGroupBox()
         self.groupbox_glass_extraction.setObjectName(u"groupbox_glass_extraction")
-        self.groupbox_glass_extraction.setTitle(u"Glas Detection")
+        self.groupbox_glass_extraction.setTitle(u"Glass Detection")
         self.groupbox_glass_extraction_layout = QHBoxLayout(self.groupbox_glass_extraction)
         self.groupbox_glass_extraction_layout.setObjectName(u"groupbox_glass_extraction_layout")
 
@@ -39,9 +37,9 @@ class GlassDetectionTabWidget(QWidget):
 
     def update_image(self, frame: np.ndarray):
         """
-        Glass detection has finished, when the program detects the glass on 30 cycles on the same spot
-        :param frame:
-        :return:
+        Glass detection finished, when the program detects the glass on 30 cycles (by default) on the same spot
+        :param frame: Original frame from camera
+        :return: None
         """
 
         frame = self.glass_detector.detect(frame)
