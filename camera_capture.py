@@ -17,7 +17,6 @@ class MainWindow(QMainWindow):
         self.__mode = "VIDEO"   # 'CAMERA' | 'VIDEO'
         self.__record_video = False
         self.__video = None
-        # self.__video = cv2.VideoWriter('output.mp4', cv2.VideoWriter_fourcc(*'X264'), 20, (2048, 2048))
 
         self.__autosale = AutoscaleImage()
         self.__autosale.create_lookup_table(t_min=1000, t_max=20000)
