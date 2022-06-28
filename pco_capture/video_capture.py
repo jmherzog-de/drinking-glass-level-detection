@@ -7,13 +7,24 @@ import numpy as np
 
 
 class VideoCapture(object):
+    """
+    Video capture class from PCO camera.
+    """
 
     def __init__(self, frame_available_callback):
+        """
+        Constructor
+        :param frame_available_callback: callback event for new frame from camera available.
+        """
         self.__frame_available_callback = frame_available_callback
         self.cam = pco.Camera()
         self.__frame_counter = 0
 
     def run(self):
+        """
+        Start capture from camera.
+        :return: None
+        """
         # --------------------------------------------- #
         # Setup Camera Parameters                       #
         # --------------------------------------------- #
@@ -36,10 +47,17 @@ class VideoCapture(object):
 
 
 class QtVideoCapture(QThread):
+    """
+    Video capture class with Qt QThread implementation.
+    """
 
+    # Callback signal when new frame available from camera.
     update_frame = Signal(np.ndarray)
 
     def __init__(self):
+        """
+        Constructor
+        """
         QThread.__init__(self, parent=None)
         self.capture_enabled = False
         self.save_image = False
@@ -47,6 +65,10 @@ class QtVideoCapture(QThread):
         self.__counter = 0
 
     def run(self):
+        """
+        Start capture process from camera.
+        :return: None
+        """
 
         with pco.Camera() as cam:
 
